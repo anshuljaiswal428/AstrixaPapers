@@ -64,26 +64,28 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   line-height: 1.1;
-  /* Keep the centered title clear of the top-right marks box on both sides. */
-  padding: 0 104px;
 }
 .qp-exam {
   font-size: 13pt;
   font-weight: 700;
-  padding: 0 104px;
 }
 .qp-meta-row {
   font-weight: 600;
   margin-top: 1px;
+  /* Centered Class/Subject line kept clear of the right-side box. */
+  padding: 0 92px;
 }
 .qp-meta-split {
   display: flex;
   justify-content: space-between;
   font-weight: 600;
+  /* Time stays at the far left (aligned with Name/Roll); Max Marks clears the box. */
+  padding: 0 92px 0 0;
 }
 .qp-marks-table {
+  /* Sits beside Class/Subject (lower than the school name), like the source docs. */
   position: absolute;
-  top: 0;
+  top: 42px;
   right: 0;
   border-collapse: collapse;
   font-size: 10pt;
