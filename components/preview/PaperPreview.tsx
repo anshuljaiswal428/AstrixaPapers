@@ -24,11 +24,24 @@ function watermarkStyle(text: string): React.CSSProperties {
   return { backgroundImage: url, backgroundRepeat: "repeat" };
 }
 
-export function PaperPreview({ doc, watermark }: { doc: PaperDoc; watermark?: string }) {
+export function PaperPreview({
+  doc,
+  watermark,
+  /** true (print): fixed layer tiles every page. false (editor): contained within the paper. */
+  watermarkFixed = true,
+}: {
+  doc: PaperDoc;
+  watermark?: string;
+  watermarkFixed?: boolean;
+}) {
   return (
     <div className="qp-paper">
       {watermark ? (
-        <div className="qp-watermark" aria-hidden style={watermarkStyle(watermark)} />
+        <div
+          className={watermarkFixed ? "qp-watermark" : "qp-watermark-contained"}
+          aria-hidden
+          style={watermarkStyle(watermark)}
+        />
       ) : null}
       <Header doc={doc} />
       {doc.sections.map((section) => (

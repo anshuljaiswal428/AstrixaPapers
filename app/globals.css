@@ -32,6 +32,7 @@ body {
   font-size: 13pt;
   line-height: 1.5;
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+  position: relative;
 }
 
 /* Watermark overlay — fixed so it tiles onto every printed PDF page. */
@@ -40,6 +41,14 @@ body {
   inset: 0;
   z-index: 5;
   pointer-events: none;
+}
+/* Contained variant for the editor live preview — confined to the paper only. */
+.qp-watermark-contained {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .qp-header {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PaperDoc, Question, QuestionType, Section } from "@/lib/paper/types";
 import { paperTotalMarks } from "@/lib/paper/types";
 import { newQuestion, newSection, uid, QUESTION_TYPE_LABELS } from "@/lib/paper/factory";
+import { WATERMARK } from "@/lib/payments";
 import { PaperPreview } from "@/components/preview/PaperPreview";
 import { QuestionBodyEditor } from "./QuestionEditors";
 import { DownloadMenu } from "./DownloadMenu";
@@ -132,7 +133,7 @@ export function Editor({
 
         {/* Live preview */}
         <div className="flex-1 overflow-y-auto bg-stone-200 p-6">
-          <PaperPreview doc={doc} />
+          <PaperPreview doc={doc} watermark={WATERMARK} watermarkFixed={false} />
         </div>
       </div>
     </div>
