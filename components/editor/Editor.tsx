@@ -6,6 +6,7 @@ import { paperTotalMarks } from "@/lib/paper/types";
 import { newQuestion, newSection, uid, QUESTION_TYPE_LABELS } from "@/lib/paper/factory";
 import { PaperPreview } from "@/components/preview/PaperPreview";
 import { QuestionBodyEditor } from "./QuestionEditors";
+import { DownloadMenu } from "./DownloadMenu";
 
 const TYPES = Object.keys(QUESTION_TYPE_LABELS) as QuestionType[];
 
@@ -76,18 +77,7 @@ export function Editor({
                 ? "Save failed (local only)"
                 : ""}
         </span>
-        <a
-          href={`/checkout?paper=${paperId}&format=PDF`}
-          className="rounded bg-stone-800 px-3 py-1 text-sm text-white hover:bg-stone-700"
-        >
-          Download PDF
-        </a>
-        <a
-          href={`/checkout?paper=${paperId}&format=DOCX`}
-          className="rounded bg-stone-800 px-3 py-1 text-sm text-white hover:bg-stone-700"
-        >
-          Download Word
-        </a>
+        <DownloadMenu paperId={paperId} />
       </div>
 
       {/* Split view */}

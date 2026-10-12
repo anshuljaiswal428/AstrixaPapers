@@ -6,7 +6,7 @@ import { NewPaperButton } from "@/components/NewPaperButton";
 
 export default async function DashboardPage() {
   const session = await auth();
-  const user = session?.user as { id?: string; email?: string; role?: string } | undefined;
+  const user = session?.user as { id?: string; name?: string; role?: string } | undefined;
   if (!user?.id) redirect("/login?callbackUrl=/dashboard");
 
   const papers = await prisma.paper.findMany({
@@ -20,12 +20,15 @@ export default async function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Your papers</h1>
-          <p className="text-sm text-stone-500">{user.email}</p>
+          <p className="text-sm text-stone-500">{user.name}</p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/orders" className="text-sm text-stone-600 hover:underline">
+            My requests
+          </Link>
           {user.role === "admin" && (
             <Link href="/admin/orders" className="text-sm text-stone-600 hover:underline">
-              Orders
+              Approvals
             </Link>
           )}
           <NewPaperButton />

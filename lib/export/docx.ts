@@ -2,6 +2,8 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  Footer,
+  Header,
   HeadingLevel,
   ImageRun,
   Packer,
@@ -170,8 +172,20 @@ async function questionParas(q: Question, index: number): Promise<(Paragraph | T
   return out;
 }
 
-/** Build a .docx Buffer from a PaperDoc. */
-export async function paperToDocx(doc: PaperDoc): Promise<Buffer> {
+/** A faint, repeated watermark line for the page header/footer (shows on every page). */
+function watermarkParagraph(text: string): Paragraph {
+  const tile = `${text}      `.repeat(3);
+  return new Paragraph({
+    alignment: AlignmentType.CENTER,
+    children: [new TextRun({ text: tile, color: "D9D9D9", bold: true, size: 36 })],
+  });
+}
+
+/** Build a .docx Buffer from a PaperDoc. Pass a watermark to stamp every page. */
+export async function paperToDocx(
+  doc: PaperDoc,
+  opts: { watermark?: string } = {},
+): Promise<Buffer> {
   const h = doc.header;
   const children: (Paragraph | Table)[] = [
     new Paragraph({
@@ -218,9 +232,22 @@ export async function paperToDocx(doc: PaperDoc): Promise<Buffer> {
     }),
   );
 
+  const wm = opts.watermark
+    ? {
+        headers: {
+          default: new Header({
+            children: [watermarkParagraph(opts.watermark), watermarkParagraph(opts.watermark)],
+          }),
+        },
+        footers: {
+          default: new Footer({ children: [watermarkParagraph(opts.watermark)] }),
+        },
+      }
+    : {};
+
   const document = new Document({
     styles: { default: { document: { run: { font: "Times New Roman", size: 24 } } } },
-    sections: [{ properties: {}, children }],
+    sections: [{ properties: {}, ...wm, children }],
   });
   return Packer.toBuffer(document);
 }

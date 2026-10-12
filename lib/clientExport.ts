@@ -25,24 +25,36 @@ export async function loadDoc(paperId: string): Promise<PaperDoc | null> {
   return s ? (JSON.parse(s) as PaperDoc) : null;
 }
 
-/** Trigger the actual download for a format (assumes payment already cleared). */
-export async function downloadPaper(paperId: string, format: "PDF" | "DOCX") {
+/**
+ * Trigger a download. `watermark=true` → free watermarked copy.
+ * `watermark=false` → no-watermark copy (server enforces an approved paid order).
+ */
+export async function downloadPaper(
+  paperId: string,
+  format: "PDF" | "DOCX",
+  watermark = true,
+) {
   if (format === "PDF") {
-    window.open(`/paper/${paperId}/print`, "_blank");
+    const q = watermark ? "" : "?nowm=1";
+    window.open(`/paper/${paperId}/print${q}`, "_blank");
     return;
   }
   const doc = await loadDoc(paperId);
   const res = await fetch("/api/export/docx", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ paperId, doc }),
+    body: JSON.stringify({ paperId, doc, watermark }),
   });
-  if (!res.ok) throw new Error(`Export failed (${res.status})`);
+  if (!res.ok) {
+    if (res.status === 402) throw new Error("Payment not approved yet.");
+    throw new Error(`Export failed (${res.status})`);
+  }
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${(doc?.title || "question-paper").replace(/[^\w.-]+/g, "_")}.docx`;
+  const suffix = watermark ? "" : "_nowatermark";
+  a.download = `${(doc?.title || "question-paper").replace(/[^\w.-]+/g, "_")}${suffix}.docx`;
   document.body.appendChild(a);
   a.click();
   a.remove();

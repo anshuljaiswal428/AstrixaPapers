@@ -3,6 +3,19 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRICE_PAISE } from "@/lib/payments";
 
+/** List the signed-in user's requests (newest first). */
+export async function GET() {
+  const session = await auth();
+  const uid = (session?.user as { id?: string } | undefined)?.id;
+  if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const orders = await prisma.order.findMany({
+    where: { userId: uid },
+    orderBy: { createdAt: "desc" },
+    include: { paper: { select: { title: true } } },
+  });
+  return NextResponse.json({ orders });
+}
+
 /** Create (or reuse an open) order for a paper + format. */
 export async function POST(req: Request) {
   const session = await auth();

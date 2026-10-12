@@ -6,6 +6,9 @@
 
 export const PRICE_PAISE = Number(process.env.NEXT_PUBLIC_PRICE_PAISE ?? "1000");
 
+/** Watermark printed on free downloads; removed after a paid, approved order. */
+export const WATERMARK = "Astrixa Technologies";
+
 export function rupees(paise: number): string {
   return (paise / 100).toFixed(2);
 }

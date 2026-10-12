@@ -17,9 +17,19 @@ import { marksTotal, paperTotalMarks } from "@/lib/paper/types";
  * Pure, server-safe renderer that turns a PaperDoc into the printed-paper look.
  * Shared by the editor preview pane and the print/PDF route.
  */
-export function PaperPreview({ doc }: { doc: PaperDoc }) {
+/** Build a repeating diagonal watermark background (tiled SVG) for every printed page. */
+function watermarkStyle(text: string): React.CSSProperties {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='360' height='240'><text x='20' y='140' font-family='Arial, sans-serif' font-size='24' font-weight='700' fill='#000000' fill-opacity='0.08' transform='rotate(-30 180 120)'>${text}</text></svg>`;
+  const url = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  return { backgroundImage: url, backgroundRepeat: "repeat" };
+}
+
+export function PaperPreview({ doc, watermark }: { doc: PaperDoc; watermark?: string }) {
   return (
     <div className="qp-paper">
+      {watermark ? (
+        <div className="qp-watermark" aria-hidden style={watermarkStyle(watermark)} />
+      ) : null}
       <Header doc={doc} />
       {doc.sections.map((section) => (
         <section key={section.id} className="qp-section">

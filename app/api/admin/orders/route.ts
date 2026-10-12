@@ -15,7 +15,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     take: 100,
     include: {
-      user: { select: { email: true } },
+      user: { select: { name: true, phone: true } },
       paper: { select: { title: true } },
     },
   });

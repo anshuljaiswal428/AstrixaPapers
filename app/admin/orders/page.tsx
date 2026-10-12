@@ -10,7 +10,7 @@ type AdminOrder = {
   amount: number;
   utr: string | null;
   createdAt: string;
-  user: { email: string };
+  user: { name: string; phone: string };
   paper: { title: string };
 };
 
@@ -58,7 +58,10 @@ export default function AdminOrdersPage() {
           {orders.map((o) => (
             <tr key={o.id} className="border-t">
               <td className="p-2">{o.paper.title}</td>
-              <td className="p-2">{o.user.email}</td>
+              <td className="p-2">
+                {o.user.name}
+                <span className="block text-xs text-stone-400">{o.user.phone}</span>
+              </td>
               <td className="p-2">{o.format}</td>
               <td className="p-2">₹{rupees(o.amount)}</td>
               <td className="p-2 font-mono text-xs">{o.utr ?? "—"}</td>

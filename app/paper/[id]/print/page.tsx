@@ -1,17 +1,36 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { PaperDoc } from "@/lib/paper/types";
 import { newPaper } from "@/lib/paper/factory";
 import { samplePaper } from "@/lib/paper/sample";
+import { WATERMARK } from "@/lib/payments";
 import { PaperPreview } from "@/components/preview/PaperPreview";
 
 export default function PrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const sp = useSearchParams();
+  // User asked for a no-watermark copy only if nowm=1 AND it's approved.
+  const wantsNoWatermark = sp.get("nowm") === "1";
+
   const [doc, setDoc] = useState<PaperDoc | null>(null);
+  const [watermarked, setWatermarked] = useState(true);
 
   useEffect(() => {
     async function load() {
+      // Decide watermark: only drop it if the paid download is approved.
+      let approved = false;
+      if (wantsNoWatermark) {
+        try {
+          const r = await fetch(`/api/orders/check?paperId=${id}&format=PDF`);
+          approved = r.ok && ((await r.json()) as { approved: boolean }).approved;
+        } catch {
+          approved = false;
+        }
+      }
+      setWatermarked(!approved);
+
       if (id === "sample") return setDoc(samplePaper());
       if (id === "local") {
         const s = localStorage.getItem("qp:local");
@@ -30,12 +49,11 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
       setDoc(s ? (JSON.parse(s) as PaperDoc) : newPaper());
     }
     load();
-  }, [id]);
+  }, [id, wantsNoWatermark]);
 
   useEffect(() => {
     if (doc) {
-      // Give the browser a tick to lay out, then open the print dialog (Save as PDF).
-      const t = setTimeout(() => window.print(), 400);
+      const t = setTimeout(() => window.print(), 500);
       return () => clearTimeout(t);
     }
   }, [doc]);
@@ -45,7 +63,10 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div>
       <div className="qp-no-print flex items-center justify-center gap-3 bg-stone-800 p-3 text-white">
-        <span>Use your browser’s “Save as PDF” in the print dialog.</span>
+        <span>
+          Use your browser’s “Save as PDF” in the print dialog.
+          {watermarked ? " (Free copy — watermarked.)" : " (Paid copy — no watermark.)"}
+        </span>
         <button
           onClick={() => window.print()}
           className="rounded bg-white px-3 py-1 text-sm text-stone-900"
@@ -53,7 +74,7 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
           Print / Save PDF
         </button>
       </div>
-      <PaperPreview doc={doc} />
+      <PaperPreview doc={doc} watermark={watermarked ? WATERMARK : undefined} />
     </div>
   );
 }

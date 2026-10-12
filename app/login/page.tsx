@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 function LoginForm() {
   const sp = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -16,13 +16,13 @@ function LoginForm() {
     setBusy(true);
     setError("");
     const res = await signIn("credentials", {
-      email,
+      phone,
       password,
       redirect: false,
     });
     setBusy(false);
     if (res?.error) {
-      setError("Invalid email or password.");
+      setError("Invalid phone number or password.");
     } else {
       window.location.href = sp.get("callbackUrl") ?? "/dashboard";
     }
@@ -33,10 +33,11 @@ function LoginForm() {
       <h1 className="text-xl font-semibold">Sign in</h1>
       <form onSubmit={submit} className="mt-4 space-y-3">
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="tel"
+          inputMode="numeric"
+          placeholder="Phone number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
           className="w-full rounded border px-3 py-2 text-sm"
           required
         />

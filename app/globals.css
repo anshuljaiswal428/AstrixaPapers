@@ -34,20 +34,34 @@ body {
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Watermark overlay — fixed so it tiles onto every printed PDF page. */
+.qp-watermark {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
 .qp-header {
   text-align: center;
-  margin-bottom: 10px;
   position: relative;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1.5px solid #000;
 }
 .qp-school {
-  font-size: 17pt;
+  font-size: 16pt;
   font-weight: 700;
   text-transform: uppercase;
+  line-height: 1.2;
+  /* Keep the centered title clear of the top-right marks box on both sides. */
+  padding: 0 104px;
 }
 .qp-exam {
   font-size: 13pt;
   font-weight: 700;
   margin-top: 2px;
+  padding: 0 104px;
 }
 .qp-meta-row {
   font-weight: 600;
@@ -64,12 +78,16 @@ body {
   right: 0;
   border-collapse: collapse;
   font-size: 10pt;
+  background: #fff;
+  z-index: 2;
 }
 .qp-marks-table td {
   border: 1px solid #000;
-  width: 22px;
-  height: 20px;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 4px;
   text-align: center;
+  font-weight: 600;
 }
 .qp-fields {
   display: flex;

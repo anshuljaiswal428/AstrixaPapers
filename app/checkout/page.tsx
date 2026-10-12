@@ -23,18 +23,21 @@ function Checkout() {
   const vpa = process.env.NEXT_PUBLIC_UPI_VPA ?? "yourname@okaxis";
   const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
 
-  const doDownload = useCallback(async () => {
-    setBusy(true);
-    setMsg("Preparing your download…");
-    try {
-      await downloadPaper(paperId, format);
-      setMsg("Done! Check your downloads / new tab.");
-    } catch (e) {
-      setMsg((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }, [paperId, format]);
+  const doDownload = useCallback(
+    async (watermark: boolean) => {
+      setBusy(true);
+      setMsg("Preparing your download…");
+      try {
+        await downloadPaper(paperId, format, watermark);
+        setMsg("Done! Check your downloads / new tab.");
+      } catch (e) {
+        setMsg((e as Error).message);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [paperId, format],
+  );
 
   // Free demo: skip payment entirely.
   useEffect(() => {
@@ -86,10 +89,10 @@ function Checkout() {
       <Shell>
         <h1 className="text-xl font-semibold">Free demo download</h1>
         <p className="mt-2 text-stone-600">
-          This is a sample/demo paper — download it free to try the export.
+          This is a sample/demo paper — download it free (watermarked) to try the export.
         </p>
         <button
-          onClick={doDownload}
+          onClick={() => doDownload(true)}
           disabled={busy}
           className="mt-4 rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
         >
@@ -111,9 +114,9 @@ function Checkout() {
         <p className="mt-3 text-stone-500">Starting checkout…</p>
       ) : paid ? (
         <div className="mt-4">
-          <p className="font-medium text-green-700">✓ Payment confirmed.</p>
+          <p className="font-medium text-green-700">✓ Payment approved — no watermark.</p>
           <button
-            onClick={doDownload}
+            onClick={() => doDownload(false)}
             disabled={busy}
             className="mt-3 rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
           >

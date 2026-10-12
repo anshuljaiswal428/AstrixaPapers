@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -17,7 +17,7 @@ export default function RegisterPage() {
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, phone, password }),
     });
     if (!res.ok) {
       const data = (await res.json()) as { error?: string };
@@ -25,7 +25,7 @@ export default function RegisterPage() {
       setBusy(false);
       return;
     }
-    await signIn("credentials", { email, password, redirect: false });
+    await signIn("credentials", { phone, password, redirect: false });
     window.location.href = "/dashboard";
   }
 
@@ -34,16 +34,18 @@ export default function RegisterPage() {
       <h1 className="text-xl font-semibold">Create account</h1>
       <form onSubmit={submit} className="mt-4 space-y-3">
         <input
-          placeholder="Name (optional)"
+          placeholder="Full name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full rounded border px-3 py-2 text-sm"
+          required
         />
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="tel"
+          inputMode="numeric"
+          placeholder="Phone number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
           className="w-full rounded border px-3 py-2 text-sm"
           required
         />
