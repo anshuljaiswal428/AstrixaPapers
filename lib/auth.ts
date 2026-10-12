@@ -22,6 +22,19 @@ export const registerSchema = z.object({
   password: z.string().min(6),
 });
 
+/**
+ * Current user id, or null. Wraps auth() in try/catch so a stale/corrupt session
+ * token (e.g. after AUTH_SECRET changes) yields a clean 401 instead of a 500.
+ */
+export async function currentUserId(): Promise<string | null> {
+  try {
+    const session = await auth();
+    return (session?.user as { id?: string } | undefined)?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },

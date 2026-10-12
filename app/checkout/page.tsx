@@ -19,6 +19,7 @@ function Checkout() {
   const [utr, setUtr] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [needsLogin, setNeedsLogin] = useState(false);
 
   const vpa = process.env.NEXT_PUBLIC_UPI_VPA ?? "yourname@okaxis";
   const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
@@ -50,7 +51,17 @@ function Checkout() {
           body: JSON.stringify({ paperId, format }),
         });
         if (res.status === 401) {
-          setMsg("Please sign in to purchase this download.");
+          setNeedsLogin(true);
+          setMsg("Your session has expired — please sign in again to continue.");
+          return;
+        }
+        if (!res.ok) {
+          const d = (await res.json().catch(() => ({}))) as { error?: string };
+          setMsg(
+            d.error
+              ? `Could not start checkout: ${d.error}`
+              : `Could not start checkout (error ${res.status}).`,
+          );
           return;
         }
         const data = (await res.json()) as { order?: Order };
@@ -64,9 +75,11 @@ function Checkout() {
             orderId: data.order.id,
           });
           setQr(await QRCode.toDataURL(link, { width: 240 }));
+        } else {
+          setMsg("Could not start checkout.");
         }
-      } catch {
-        setMsg("Could not start checkout.");
+      } catch (e) {
+        setMsg(`Could not start checkout: ${(e as Error).message}`);
       }
     })();
   }, [free, paperId, format, vpa, payee]);
@@ -86,7 +99,7 @@ function Checkout() {
 
   if (free) {
     return (
-      <Shell>
+      <Shell backHref={`/editor/${paperId}`}>
         <h1 className="text-xl font-semibold">Free demo download</h1>
         <p className="mt-2 text-stone-600">
           This is a sample/demo paper — download it free (watermarked) to try the export.
@@ -106,11 +119,19 @@ function Checkout() {
   const paid = order?.status === "paid";
 
   return (
-    <Shell>
+    <Shell backHref={`/editor/${paperId}`}>
       <h1 className="text-xl font-semibold">Download {format}</h1>
       {msg && <p className="mt-2 text-sm text-amber-700">{msg}</p>}
+      {needsLogin && (
+        <a
+          href={`/login?callbackUrl=/checkout?paper=${paperId}%26format=${format}`}
+          className="mt-2 inline-block text-sm text-indigo-700 underline"
+        >
+          Sign in again →
+        </a>
+      )}
 
-      {!order ? (
+      {needsLogin ? null : !order ? (
         <p className="mt-3 text-stone-500">Starting checkout…</p>
       ) : paid ? (
         <div className="mt-4">
@@ -165,12 +186,12 @@ function Checkout() {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, backHref }: { children: React.ReactNode; backHref: string }) {
   return (
     <main className="mx-auto mt-16 max-w-md rounded-xl border bg-white p-6 shadow-sm">
       {children}
       <div className="mt-6 text-sm">
-        <a href="javascript:history.back()" className="text-stone-500 hover:underline">
+        <a href={backHref} className="text-stone-500 hover:underline">
           ← Back to editor
         </a>
       </div>

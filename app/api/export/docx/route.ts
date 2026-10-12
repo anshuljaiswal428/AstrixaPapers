@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paperToDocx } from "@/lib/export/docx";
 import { isFreePaperId, WATERMARK } from "@/lib/payments";
@@ -21,8 +21,7 @@ export async function POST(req: Request) {
     // Demo papers: always free + watermarked.
     watermarked = true;
   } else {
-    const session = await auth();
-    const uid = (session?.user as { id?: string } | undefined)?.id;
+    const uid = await currentUserId();
     if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
     if (wantsNoWatermark) {

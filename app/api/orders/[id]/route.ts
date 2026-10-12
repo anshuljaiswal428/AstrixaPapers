@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 async function uidOf() {
-  const session = await auth();
-  return (session?.user as { id?: string } | undefined)?.id ?? null;
+  return currentUserId();
 }
 
 /** Poll order status. */

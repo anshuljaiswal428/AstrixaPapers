@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isFreePaperId } from "@/lib/payments";
 
@@ -12,8 +12,7 @@ export async function GET(req: Request) {
   // Demo papers are always free + watermarked (no approval possible).
   if (isFreePaperId(paperId)) return NextResponse.json({ approved: false });
 
-  const session = await auth();
-  const uid = (session?.user as { id?: string } | undefined)?.id;
+  const uid = await currentUserId();
   if (!uid) return NextResponse.json({ approved: false });
 
   const paid = await prisma.order.findFirst({

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NewPaperButton } from "@/components/NewPaperButton";
+import { PaperCard } from "@/components/PaperCard";
 import { paperTotalMarks } from "@/lib/paper/types";
 import type { PaperDoc } from "@/lib/paper/types";
 
@@ -122,43 +123,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {papers.map((p) => (
-              <Link
-                key={p.id}
-                href={`/editor/${p.id}`}
-                className="group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                {/* Mini paper thumbnail */}
-                <div className="relative h-28 overflow-hidden border-b border-stone-100 bg-stone-50 p-3">
-                  <div className="mx-auto h-full w-3/4 rounded-sm bg-white p-2 shadow-sm">
-                    <div className="mx-auto mb-1.5 h-1.5 w-2/3 rounded-full bg-stone-300" />
-                    <div className="space-y-1">
-                      <div className="h-1 w-full rounded-full bg-stone-200" />
-                      <div className="h-1 w-5/6 rounded-full bg-stone-200" />
-                      <div className="h-1 w-full rounded-full bg-stone-200" />
-                      <div className="h-1 w-2/3 rounded-full bg-stone-200" />
-                    </div>
-                  </div>
-                  <span className="absolute right-2 top-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
-                    {p.marks} marks
-                  </span>
-                </div>
-
-                <div className="p-4">
-                  <h3 className="truncate font-semibold text-stone-900 group-hover:text-indigo-700">
-                    {p.title}
-                  </h3>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {p.className && <Chip>Class {p.className}</Chip>}
-                    {p.subject && <Chip>{p.subject}</Chip>}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-stone-400">
-                    <span>
-                      {p.sections} sections · {p.questions} questions
-                    </span>
-                    <span>{new Date(p.updatedAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </Link>
+              <PaperCard key={p.id} paper={p} />
             ))}
           </div>
         )}
@@ -173,13 +138,5 @@ function Stat({ label, value }: { label: string; value: number }) {
       <div className="text-2xl font-bold text-stone-900">{value}</div>
       <div className="text-xs text-stone-500">{label}</div>
     </div>
-  );
-}
-
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
-      {children}
-    </span>
   );
 }

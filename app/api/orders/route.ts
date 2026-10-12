@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRICE_PAISE } from "@/lib/payments";
 
@@ -10,8 +10,7 @@ import { PRICE_PAISE } from "@/lib/payments";
  * Orders created but never paid (no UTR) are omitted as noise.
  */
 export async function GET() {
-  const session = await auth();
-  const uid = (session?.user as { id?: string } | undefined)?.id;
+  const uid = await currentUserId();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const orders = await prisma.order.findMany({
     where: {
@@ -26,8 +25,7 @@ export async function GET() {
 
 /** Create (or reuse an open) order for a paper + format. */
 export async function POST(req: Request) {
-  const session = await auth();
-  const uid = (session?.user as { id?: string } | undefined)?.id;
+  const uid = await currentUserId();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = (await req.json().catch(() => ({}))) as { paperId?: string; format?: string };

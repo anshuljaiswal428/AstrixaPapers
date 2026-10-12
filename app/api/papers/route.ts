@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { newPaper } from "@/lib/paper/factory";
 import type { PaperDoc } from "@/lib/paper/types";
 
 async function userId() {
-  const session = await auth();
-  return (session?.user as { id?: string } | undefined)?.id ?? null;
+  return currentUserId();
 }
 
 export async function GET() {
