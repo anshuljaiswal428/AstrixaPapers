@@ -66,8 +66,11 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
     const doPrint = () => {
       if (printed) return;
       printed = true;
+      // Clear any stray selection so the preview shows clean black text.
+      window.getSelection()?.removeAllRanges();
       window.print();
     };
+    document.title = doc.title || "Question Paper";
     const fontsReady =
       (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready ??
       Promise.resolve();
