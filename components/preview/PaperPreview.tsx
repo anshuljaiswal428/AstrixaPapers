@@ -62,7 +62,7 @@ function Header({ doc }: { doc: PaperDoc }) {
   const total = paperTotalMarks(doc);
   return (
     <header className="qp-header">
-      {/* Right block: W/O/T box with Max Marks + Time stacked right-aligned beneath it. */}
+      {/* Right block: W/O/T box, then Marks + Time stacked beneath it (like the source PDF). */}
       <div className="qp-right-block">
         {h.marksTable && (
           <table className="qp-marks-table">
@@ -80,24 +80,19 @@ function Header({ doc }: { doc: PaperDoc }) {
             </tbody>
           </table>
         )}
-        <div className="qp-right-line">Max Marks: {h.marksTable?.total ?? total}</div>
+        <div className="qp-right-line">Marks-{h.marksTable?.written ?? total}</div>
         <div className="qp-right-line">Time: {h.time}</div>
       </div>
 
       <div className="qp-school">{h.schoolName}</div>
       <div className="qp-exam">{h.examTitle}</div>
-      <div className="qp-meta-row">
-        <span>
-          CLASS – {h.className}
-          {"  "}
-          SUBJECT – {h.subject}
-        </span>
-      </div>
+      <div className="qp-meta-row">CLASS – {h.className}</div>
+      <div className="qp-meta-row">SUBJECT – {h.subject}</div>
 
       <div className="qp-fields">
         {h.fields.map((f) => (
           <div key={f.id} className="qp-field">
-            {f.label}: <span className="qp-blank" />
+            {f.label} - <span className="qp-blank" />
           </div>
         ))}
       </div>
