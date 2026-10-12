@@ -32,8 +32,8 @@ export default async function Home() {
         </Link>
       </div>
       <div className="text-sm text-stone-500">
-        <Link href="/dashboard" className="hover:underline">
-          Sign in to save papers →
+        <Link href="/login" className="hover:underline">
+          Already have an account? Sign in →
         </Link>
       </div>
     </main>

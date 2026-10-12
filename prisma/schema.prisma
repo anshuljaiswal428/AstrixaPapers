@@ -67,8 +67,22 @@ model Order {
   createdAt DateTime @default(now())
   paidAt    DateTime?
 
+  messages Message[]
+
   @@index([userId])
   @@index([status])
+}
+
+// Per-request help chat between the user and the admin (last 15 kept).
+model Message {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender    String // "user" | "admin"
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
 }
 
 // --- Auth.js (NextAuth) adapter tables ---

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { rupees } from "@/lib/payments";
 import { downloadPaper } from "@/lib/clientExport";
+import { OrderChat } from "@/components/OrderChat";
 
 type Order = {
   id: string;
@@ -22,6 +23,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
+  const [chat, setChat] = useState<{ id: string; title: string } | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/orders");
@@ -135,11 +137,21 @@ export default function OrdersPage() {
         {!loading && !error && orders.length > 0 && (
           <div className="mt-6 space-y-3">
             {orders.map((o) => (
-              <OrderRow key={o.id} o={o} busy={busy === o.id} onDownload={() => download(o)} />
+              <OrderRow
+                key={o.id}
+                o={o}
+                busy={busy === o.id}
+                onDownload={() => download(o)}
+                onChat={() => setChat({ id: o.id, title: o.paper.title })}
+              />
             ))}
           </div>
         )}
       </main>
+
+      {chat && (
+        <OrderChat orderId={chat.id} title={chat.title} onClose={() => setChat(null)} />
+      )}
     </div>
   );
 }
@@ -148,10 +160,12 @@ function OrderRow({
   o,
   busy,
   onDownload,
+  onChat,
 }: {
   o: Order;
   busy: boolean;
   onDownload: () => void;
+  onChat: () => void;
 }) {
   const approved = o.status === "paid";
   return (
@@ -175,6 +189,15 @@ function OrderRow({
         )}
       </div>
 
+      <button
+        onClick={onChat}
+        title="Chat with admin about this request"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
+      >
+        <ChatIcon />
+        Help
+      </button>
+
       {approved ? (
         <button
           disabled={busy}
@@ -191,6 +214,14 @@ function OrderRow({
         </span>
       )}
     </div>
+  );
+}
+
+function ChatIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z" />
+    </svg>
   );
 }
 
