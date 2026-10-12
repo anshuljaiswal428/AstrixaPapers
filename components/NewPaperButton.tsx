@@ -17,7 +17,7 @@ export function NewPaperButton() {
           setBusy(false);
         }
       }}
-      className="rounded-lg bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700 disabled:opacity-50"
+      className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50 disabled:opacity-50"
     >
       {busy ? "Creating…" : "+ New paper"}
     </button>
