@@ -16,6 +16,7 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
 
   const [doc, setDoc] = useState<PaperDoc | null>(null);
   const [watermarked, setWatermarked] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -42,22 +43,60 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
           const data = (await res.json()) as { paper: { doc: PaperDoc } };
           return setDoc(data.paper.doc);
         }
+        if (res.status === 401) {
+          setError("Please sign in, then open the download again.");
+          return;
+        }
       } catch {
-        /* fall through */
+        /* fall through to local cache */
       }
+      // Fall back to the browser's autosaved copy; otherwise report instead of printing blank.
       const s = localStorage.getItem(`qp:${id}`);
-      setDoc(s ? (JSON.parse(s) as PaperDoc) : newPaper());
+      if (s) return setDoc(JSON.parse(s) as PaperDoc);
+      setError("Couldn’t load this paper. Open it in the editor and try the download again.");
     }
     load();
   }, [id, wantsNoWatermark]);
 
+  // Auto-open the print dialog, but only AFTER fonts and images have painted —
+  // otherwise it can fire on a blank page (common with image-heavy papers).
   useEffect(() => {
-    if (doc) {
-      const t = setTimeout(() => window.print(), 500);
-      return () => clearTimeout(t);
-    }
+    if (!doc) return;
+    let printed = false;
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
+      window.print();
+    };
+    const fontsReady =
+      (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready ??
+      Promise.resolve();
+    const imgs = Array.from(document.images);
+    const imagesReady = imgs.map((img) =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise<void>((res) => {
+            img.onload = img.onerror = () => res();
+          }),
+    );
+    Promise.all([fontsReady, ...imagesReady]).then(() => {
+      // Two frames to ensure layout/paint is committed before printing.
+      requestAnimationFrame(() => requestAnimationFrame(doPrint));
+    });
+    // Safety fallback so it never hangs waiting on a stuck asset.
+    const t = setTimeout(doPrint, 2500);
+    return () => clearTimeout(t);
   }, [doc]);
 
+  if (error)
+    return (
+      <div className="p-10 text-center text-stone-600">
+        <p>{error}</p>
+        <a href="/dashboard" className="mt-3 inline-block text-indigo-700 underline">
+          Go to dashboard
+        </a>
+      </div>
+    );
   if (!doc) return <div className="p-10 text-stone-500">Loading…</div>;
 
   return (
