@@ -4,7 +4,6 @@ import { use, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { PaperDoc } from "@/lib/paper/types";
 import { newPaper } from "@/lib/paper/factory";
-import { samplePaper } from "@/lib/paper/sample";
 import { WATERMARK } from "@/lib/payments";
 import { PaperPreview } from "@/components/preview/PaperPreview";
 
@@ -32,9 +31,8 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
       }
       setWatermarked(!approved);
 
-      if (id === "sample") return setDoc(samplePaper());
-      if (id === "local") {
-        const s = localStorage.getItem("qp:local");
+      if (id === "sample" || id === "local") {
+        const s = localStorage.getItem(`qp:${id}`);
         return setDoc(s ? (JSON.parse(s) as PaperDoc) : newPaper());
       }
       try {

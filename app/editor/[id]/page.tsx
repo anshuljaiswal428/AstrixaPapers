@@ -3,7 +3,6 @@
 import { use, useEffect, useState } from "react";
 import type { PaperDoc } from "@/lib/paper/types";
 import { newPaper } from "@/lib/paper/factory";
-import { samplePaper } from "@/lib/paper/sample";
 import { Editor } from "@/components/editor/Editor";
 
 export default function EditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,10 +12,9 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      // Special local ids need no DB.
-      if (id === "sample") return setDoc(samplePaper());
-      if (id === "local") {
-        const saved = localStorage.getItem("qp:local");
+      // Public demo ids (no DB): start from a blank paper, saved in the browser.
+      if (id === "sample" || id === "local") {
+        const saved = localStorage.getItem(`qp:${id}`);
         return setDoc(saved ? (JSON.parse(saved) as PaperDoc) : newPaper());
       }
       // Try the API (requires auth + DB); fall back to localStorage, then a blank paper.

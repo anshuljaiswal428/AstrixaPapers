@@ -1,13 +1,9 @@
 import type { PaperDoc } from "@/lib/paper/types";
 
-/** Load a paper doc the same way the editor does: sample/local/localStorage/API. */
+/** Load a paper doc the same way the editor does: demo (sample/local)/localStorage/API. */
 export async function loadDoc(paperId: string): Promise<PaperDoc | null> {
-  if (paperId === "sample") {
-    const { samplePaper } = await import("@/lib/paper/sample");
-    return samplePaper();
-  }
-  if (paperId === "local") {
-    const s = localStorage.getItem("qp:local");
+  if (paperId === "sample" || paperId === "local") {
+    const s = localStorage.getItem(`qp:${paperId}`);
     if (s) return JSON.parse(s) as PaperDoc;
     const { newPaper } = await import("@/lib/paper/factory");
     return newPaper();
