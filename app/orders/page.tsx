@@ -26,8 +26,8 @@ export default function OrdersPage() {
   const load = useCallback(async () => {
     const res = await fetch("/api/orders");
     if (res.status === 401) {
-      setError("Please sign in to see your downloads.");
-      setLoading(false);
+      // Not logged in → back to the main page.
+      window.location.href = "/";
       return;
     }
     if (res.ok) setOrders(((await res.json()) as { orders: Order[] }).orders);

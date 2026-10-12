@@ -19,7 +19,7 @@ function initials(name: string) {
 export default async function DashboardPage() {
   const session = await auth();
   const user = session?.user as { id?: string; name?: string; role?: string } | undefined;
-  if (!user?.id) redirect("/login?callbackUrl=/dashboard");
+  if (!user?.id) redirect("/");
 
   const rows = await prisma.paper.findMany({
     where: { userId: user.id },

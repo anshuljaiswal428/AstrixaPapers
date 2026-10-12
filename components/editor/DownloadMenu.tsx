@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { downloadPaper } from "@/lib/clientExport";
-import { rupees, PRICE_PAISE } from "@/lib/payments";
+import { rupees, PRICE_PAISE, isFreePaperId } from "@/lib/payments";
 
 /**
  * Download menu with two tiers:
@@ -12,6 +12,7 @@ import { rupees, PRICE_PAISE } from "@/lib/payments";
 export function DownloadMenu({ paperId }: { paperId: string }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState("");
+  const [authPrompt, setAuthPrompt] = useState(false);
 
   async function free(format: "PDF" | "DOCX") {
     setBusy(format);
@@ -26,6 +27,12 @@ export function DownloadMenu({ paperId }: { paperId: string }) {
   }
 
   function paid(format: "PDF" | "DOCX") {
+    // Guests (demo/local paper) must sign in first — their work is preserved.
+    if (isFreePaperId(paperId)) {
+      setOpen(false);
+      setAuthPrompt(true);
+      return;
+    }
     window.location.href = `/checkout?paper=${paperId}&format=${format}`;
   }
 
@@ -80,6 +87,46 @@ export function DownloadMenu({ paperId }: { paperId: string }) {
             </p>
           </div>
         </>
+      )}
+
+      {authPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+            <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-xl bg-indigo-50 text-2xl">
+              🔒
+            </div>
+            <h3 className="text-lg font-semibold text-stone-900">
+              Sign in to remove the watermark
+            </h3>
+            <p className="mt-2 text-sm text-stone-600">
+              Create a free account (or sign in) to buy the watermark-free download.
+            </p>
+            <p className="mt-1 text-xs text-green-700">
+              ✓ Don’t worry — the paper you’ve built is saved and will be waiting for you right
+              after you sign in.
+            </p>
+            <div className="mt-4 flex justify-center gap-2">
+              <a
+                href="/register"
+                className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700"
+              >
+                Sign up
+              </a>
+              <a
+                href="/login"
+                className="rounded-lg border px-4 py-2 text-sm hover:bg-stone-100"
+              >
+                Sign in
+              </a>
+            </div>
+            <button
+              onClick={() => setAuthPrompt(false)}
+              className="mt-3 text-xs text-stone-400 hover:underline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

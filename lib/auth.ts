@@ -37,7 +37,8 @@ export async function currentUserId(): Promise<string | null> {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
+  // Keep users signed in for a week (JWT + cookie lifetime).
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
   pages: { signIn: "/login" },
   providers: [
     Credentials({
