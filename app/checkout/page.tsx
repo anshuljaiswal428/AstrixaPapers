@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import { downloadPaper } from "@/lib/clientExport";
 import { PRICE_PAISE, rupees, upiLink, isFreePaperId } from "@/lib/payments";
@@ -10,6 +10,7 @@ type Order = { id: string; status: string; amount: number; format: string };
 
 function Checkout() {
   const sp = useSearchParams();
+  const router = useRouter();
   const paperId = sp.get("paper") ?? "";
   const format = (sp.get("format") === "DOCX" ? "DOCX" : "PDF") as "PDF" | "DOCX";
 
@@ -20,6 +21,33 @@ function Checkout() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  const submitUtr = useCallback(async () => {
+    if (!order) return;
+    if (!utr.trim()) {
+      setMsg("Please enter your UPI transaction ID.");
+      return;
+    }
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ utr }),
+      });
+      if (!res.ok) throw new Error();
+      setSubmitted(true);
+      // Take them to their requests after a moment so they can track approval.
+      setTimeout(() => router.push("/orders"), 2200);
+    } catch {
+      setMsg("Could not submit. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }, [order, utr, router]);
 
   const vpa = process.env.NEXT_PUBLIC_UPI_VPA ?? "yourname@okaxis";
   const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
@@ -119,6 +147,7 @@ function Checkout() {
   const paid = order?.status === "paid";
 
   return (
+    <>
     <Shell backHref={`/editor/${paperId}`}>
       <h1 className="text-xl font-semibold">Download {format}</h1>
       {msg && <p className="mt-2 text-sm text-amber-700">{msg}</p>}
@@ -144,6 +173,24 @@ function Checkout() {
             Download {format}
           </button>
         </div>
+      ) : submitted ? (
+        <div className="mt-4 flex flex-col items-center gap-2 py-4 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-full bg-green-100 text-3xl text-green-600">
+            ✓
+          </div>
+          <p className="text-lg font-semibold text-stone-800">Transaction ID submitted!</p>
+          <p className="text-sm text-stone-500">
+            Your request is now <strong>awaiting admin approval</strong>. Once approved, you can
+            download it from My Requests.
+          </p>
+          <a
+            href="/orders"
+            className="mt-2 rounded-lg bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700"
+          >
+            Go to My Requests →
+          </a>
+          <p className="text-xs text-stone-400">Redirecting…</p>
+        </div>
       ) : (
         <div className="mt-4 space-y-4">
           <p className="text-stone-700">
@@ -166,23 +213,61 @@ function Checkout() {
               className="flex-1 rounded border px-2 py-1 text-sm"
             />
             <button
-              onClick={async () => {
-                await fetch(`/api/orders/${order.id}`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ utr }),
-                });
-                setMsg("Submitted. Waiting for confirmation…");
+              onClick={() => {
+                if (!utr.trim()) {
+                  setMsg("Please enter your UPI transaction ID.");
+                } else {
+                  setMsg("");
+                  setConfirming(true);
+                }
               }}
-              className="rounded bg-stone-900 px-3 py-1 text-sm text-white"
+              disabled={busy}
+              className="rounded bg-stone-900 px-3 py-1 text-sm text-white disabled:opacity-50"
             >
-              Submit
+              {busy ? "Submitting…" : "Submit"}
             </button>
           </div>
           <p className="text-xs text-stone-400">Waiting for confirmation… (this page auto-refreshes)</p>
         </div>
       )}
     </Shell>
+
+    {confirming && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+          <h3 className="text-lg font-semibold text-stone-900">Confirm submission</h3>
+          <p className="mt-2 text-sm text-stone-600">
+            Please double-check your UPI transaction ID before submitting:
+          </p>
+          <div className="mt-3 break-all rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-center font-mono text-sm font-semibold text-stone-800">
+            {utr}
+          </div>
+          <p className="mt-2 text-xs text-stone-500">
+            Make sure it exactly matches the payment you made — this is what the admin verifies.
+          </p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              onClick={() => setConfirming(false)}
+              disabled={busy}
+              className="rounded-lg border px-4 py-2 text-sm hover:bg-stone-100 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                setConfirming(false);
+                await submitUtr();
+              }}
+              disabled={busy}
+              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+            >
+              Yes, submit
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

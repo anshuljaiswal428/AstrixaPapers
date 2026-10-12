@@ -61,7 +61,7 @@ export default async function DashboardPage() {
               href="/orders"
               className="rounded-lg px-3 py-1.5 text-stone-600 hover:bg-stone-100"
             >
-              My downloads
+              My Requests
             </Link>
             <span
               className="ml-2 grid h-8 w-8 place-items-center rounded-full bg-stone-200 text-xs font-semibold text-stone-700"

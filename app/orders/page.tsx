@@ -77,13 +77,13 @@ export default function OrdersPage() {
       <main className="mx-auto max-w-4xl px-6 py-8">
         {/* Hero */}
         <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/20 text-2xl">
-            ⬇️
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25">
+            <RequestsIcon />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold">My downloads</h1>
+            <h1 className="text-2xl font-semibold">My Requests</h1>
             <p className="mt-0.5 text-sm text-indigo-100">
-              Your watermark-free purchases — download approved ones anytime.
+              Your watermark-free requests — download approved ones anytime.
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@ export default function OrdersPage() {
             <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-xl bg-indigo-50 text-2xl">
               🧾
             </div>
-            <p className="font-medium text-stone-700">No downloads yet</p>
+            <p className="font-medium text-stone-700">No requests yet</p>
             <p className="mt-1 text-sm text-stone-500">
               From a paper, choose “Download → pay to remove watermark”.
             </p>
@@ -225,6 +225,24 @@ function DownloadIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
+    </svg>
+  );
+}
+
+function RequestsIcon() {
+  return (
+    <svg
+      width="26"
+      height="26"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="white"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
     </svg>
   );
 }
