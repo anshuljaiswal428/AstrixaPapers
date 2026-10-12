@@ -35,7 +35,8 @@ export default async function DashboardPage() {
       title: p.title,
       className: p.className,
       subject: p.subject,
-      updatedAt: p.updatedAt,
+      // Format on the server with a fixed locale so client hydration matches.
+      updatedAt: new Date(p.updatedAt).toLocaleDateString("en-GB"),
       marks: paperTotalMarks(doc),
       questions,
       sections: doc.sections?.length ?? 0,

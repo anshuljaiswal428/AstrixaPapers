@@ -9,7 +9,8 @@ export type PaperCardData = {
   title: string;
   className: string | null;
   subject: string | null;
-  updatedAt: string | Date;
+  /** Already formatted on the server (avoids locale hydration mismatch). */
+  updatedAt: string;
   marks: number;
   questions: number;
   sections: number;
@@ -62,7 +63,7 @@ export function PaperCard({ paper }: { paper: PaperCardData }) {
             <span>
               {paper.sections} sections · {paper.questions} questions
             </span>
-            <span>{new Date(paper.updatedAt).toLocaleDateString()}</span>
+            <span>{paper.updatedAt}</span>
           </div>
         </div>
       </Link>
