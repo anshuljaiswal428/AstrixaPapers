@@ -72,14 +72,28 @@ body {
   margin-top: 2px;
   padding: 0 104px;
 }
-.qp-meta-row {
-  font-weight: 600;
-  margin-top: 4px;
+/* CLASS / SUBJECT — each on its own centered line, kept clear of the marks box. */
+.qp-line {
+  font-size: 13pt;
+  font-weight: 700;
+  margin-top: 2px;
+  padding: 0 104px;
 }
-.qp-meta-split {
+/* Bottom row of the header: Name/Roll stacked left, Marks/Time stacked right. */
+.qp-header-bottom {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 14px;
+  text-align: left;
+}
+.qp-right-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: right;
   font-weight: 600;
+  white-space: nowrap;
 }
 .qp-marks-table {
   position: absolute;
@@ -100,10 +114,13 @@ body {
 }
 .qp-fields {
   display: flex;
-  gap: 28px;
-  margin-top: 10px;
-  text-align: left;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
   font-weight: 600;
+}
+.qp-field {
+  white-space: nowrap;
 }
 .qp-blank {
   display: inline-block;

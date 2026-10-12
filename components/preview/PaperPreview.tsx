@@ -62,19 +62,6 @@ function Header({ doc }: { doc: PaperDoc }) {
   const total = paperTotalMarks(doc);
   return (
     <header className="qp-header">
-      <div className="qp-school">{h.schoolName}</div>
-      <div className="qp-exam">{h.examTitle}</div>
-      <div className="qp-meta-row">
-        <span>
-          CLASS – {h.className}
-          {"  "}
-          SUBJECT – {h.subject}
-        </span>
-      </div>
-      <div className="qp-meta-row qp-meta-split">
-        <span>Time: {h.time}</span>
-        <span>Max Marks: {h.marksTable?.total ?? total}</span>
-      </div>
       {h.marksTable && (
         <table className="qp-marks-table">
           <tbody>
@@ -91,12 +78,23 @@ function Header({ doc }: { doc: PaperDoc }) {
           </tbody>
         </table>
       )}
-      <div className="qp-fields">
-        {h.fields.map((f) => (
-          <span key={f.id} className="qp-field">
-            {f.label}: <span className="qp-blank" />
-          </span>
-        ))}
+      <div className="qp-school">{h.schoolName}</div>
+      <div className="qp-exam">{h.examTitle}</div>
+      <div className="qp-line">CLASS – {h.className}</div>
+      <div className="qp-line">SUBJECT – {h.subject}</div>
+
+      <div className="qp-header-bottom">
+        <div className="qp-fields">
+          {h.fields.map((f) => (
+            <div key={f.id} className="qp-field">
+              {f.label} - <span className="qp-blank" />
+            </div>
+          ))}
+        </div>
+        <div className="qp-right-meta">
+          <div>Max Marks: {h.marksTable?.total ?? total}</div>
+          <div>Time: {h.time}</div>
+        </div>
       </div>
     </header>
   );

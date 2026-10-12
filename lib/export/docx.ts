@@ -196,17 +196,31 @@ export async function paperToDocx(
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: h.examTitle, bold: true })] }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun(`CLASS – ${h.className}     SUBJECT – ${h.subject}`)],
+      children: [new TextRun({ text: `CLASS – ${h.className}`, bold: true })],
     }),
     new Paragraph({
+      alignment: AlignmentType.CENTER,
       spacing: { after: 120 },
-      tabStops: [{ type: "right", position: 9000 }],
-      children: [new TextRun(`Time: ${h.time}\tMax Marks: ${h.marksTable?.total ?? paperTotalMarks(doc)}`)],
+      children: [new TextRun({ text: `SUBJECT – ${h.subject}`, bold: true })],
     }),
-    new Paragraph({
-      spacing: { after: 160 },
-      children: [new TextRun(h.fields.map((f) => `${f.label}: ______________________`).join("        "))],
-    }),
+    // Name/Roll stacked on the left, Marks/Time right-aligned on the same lines.
+    ...h.fields.map(
+      (f, i) =>
+        new Paragraph({
+          spacing: { after: 80 },
+          tabStops: [{ type: "right", position: 9000 }],
+          children: [
+            new TextRun(`${f.label} - ______________________`),
+            new TextRun(
+              i === 0
+                ? `\tMax Marks: ${h.marksTable?.total ?? paperTotalMarks(doc)}`
+                : i === 1
+                  ? `\tTime: ${h.time}`
+                  : "",
+            ),
+          ],
+        }),
+    ),
   ];
 
   for (const section of doc.sections) {
