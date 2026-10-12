@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f5f4;
+  --foreground: #1c1917;
 }
 
 @theme inline {
@@ -12,15 +12,227 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ------------------------------------------------------------------ */
+/* Question-paper look. Shared by editor preview and the print route.  */
+/* ------------------------------------------------------------------ */
+.qp-paper {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 16mm 14mm;
+  background: #fff;
+  color: #000;
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 13pt;
+  line-height: 1.5;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+}
+
+.qp-header {
+  text-align: center;
+  margin-bottom: 10px;
+  position: relative;
+}
+.qp-school {
+  font-size: 17pt;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.qp-exam {
+  font-size: 13pt;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.qp-meta-row {
+  font-weight: 600;
+  margin-top: 4px;
+}
+.qp-meta-split {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.qp-marks-table {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+.qp-marks-table td {
+  border: 1px solid #000;
+  width: 22px;
+  height: 20px;
+  text-align: center;
+}
+.qp-fields {
+  display: flex;
+  gap: 28px;
+  margin-top: 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.qp-blank {
+  display: inline-block;
+  border-bottom: 1px solid #000;
+  min-width: 160px;
+}
+.qp-blank-sm {
+  display: inline-block;
+  border-bottom: 1px solid #000;
+  min-width: 70px;
+}
+
+.qp-section {
+  margin-top: 14px;
+}
+.qp-section-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13pt;
+  margin: 10px 0 6px;
+  text-decoration: underline;
+}
+
+.qp-q {
+  margin: 8px 0;
+  break-inside: avoid;
+}
+.qp-q-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-weight: 700;
+}
+.qp-q-label {
+  flex: 1;
+}
+.qp-note {
+  font-weight: 400;
+}
+.qp-marks {
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 11pt;
+}
+.qp-q-body {
+  margin-top: 2px;
+  padding-left: 18px;
+  font-weight: 400;
+}
+
+.qp-content {
+  display: inline;
+}
+.qp-img {
+  vertical-align: middle;
+  max-width: 100%;
+  margin: 0 4px;
+}
+
+.qp-mcq-item {
+  margin: 4px 0;
+}
+.qp-mcq-stem {
+  font-weight: 400;
+}
+.qp-sub-n {
+  margin-right: 6px;
+}
+.qp-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  padding-left: 22px;
+  margin-top: 2px;
+}
+.qp-opt-label {
+  margin-right: 4px;
+}
+
+.qp-wordbank {
+  border: 1px solid #000;
+  display: inline-block;
+  padding: 2px 10px;
+  margin: 4px 0;
+}
+
+.qp-list {
+  margin: 4px 0;
+  padding-left: 26px;
+}
+.qp-alpha {
+  list-style: lower-alpha;
+}
+.qp-num {
+  list-style: decimal;
+}
+.qp-list li {
+  margin: 3px 0;
+}
+
+.qp-match {
+  border-collapse: collapse;
+  margin: 6px 0;
+  width: 70%;
+}
+.qp-match td {
+  padding: 4px 8px;
+  vertical-align: middle;
+}
+.qp-match-label {
+  width: 24px;
+}
+.qp-match-left {
+  width: 42%;
+}
+.qp-match-dash {
+  width: 24px;
+  text-align: center;
+}
+
+.qp-answer-line {
+  display: block;
+  border-bottom: 1px solid #000;
+  height: 20px;
+  margin: 6px 0;
+}
+
+.qp-passage {
+  margin: 4px 0;
+  white-space: pre-wrap;
+}
+
+.qp-end {
+  text-align: center;
+  font-weight: 700;
+  margin-top: 20px;
+}
+
+/* Print: show only the paper, fill the page edge-to-edge. */
+@media print {
+  body {
+    background: #fff;
+  }
+  .qp-no-print {
+    display: none !important;
+  }
+  .qp-paper {
+    box-shadow: none;
+    margin: 0;
+    width: auto;
+    min-height: auto;
+    padding: 0;
+  }
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
 }
