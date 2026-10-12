@@ -275,7 +275,9 @@ body {
     margin: 0;
     width: auto;
     min-height: auto;
-    padding: 0;
+    /* Page margins live here (not in @page) so the browser drops its
+       auto header/footer (URL, date, title, page number). */
+    padding: 14mm;
   }
   /* Force visible black text — defeats dark-mode / color inversions that can
      otherwise render the text as invisible (or highlighted) blocks. */
@@ -290,6 +292,7 @@ body {
   }
   @page {
     size: A4;
-    margin: 14mm;
+    /* Zero page margin → Chromium omits the URL/date/title/page-number header & footer. */
+    margin: 0;
   }
 }

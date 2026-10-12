@@ -73,17 +73,11 @@ export function DownloadMenu({ paperId }: { paperId: string }) {
               onClick={() => paid("PDF")}
               className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-stone-100"
             >
-              PDF — pay to remove watermark
-            </button>
-            <button
-              onClick={() => paid("DOCX")}
-              className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-stone-100"
-            >
-              Word — pay to remove watermark
+              Remove watermark — unlocks PDF &amp; Word
             </button>
             <p className="px-2 pt-2 text-[11px] text-stone-400">
-              Pay on the UPI QR, submit your transaction ID, and download once the payment is
-              approved.
+              Pay once on the UPI QR, submit your transaction ID, and download both PDF &amp; Word
+              once approved.
             </p>
           </div>
         </>

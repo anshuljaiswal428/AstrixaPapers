@@ -53,11 +53,11 @@ function Checkout() {
   const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
 
   const doDownload = useCallback(
-    async (watermark: boolean) => {
+    async (fmt: "PDF" | "DOCX", watermark: boolean) => {
       setBusy(true);
       setMsg("Preparing your download…");
       try {
-        await downloadPaper(paperId, format, watermark);
+        await downloadPaper(paperId, fmt, watermark);
         setMsg("Done! Check your downloads / new tab.");
       } catch (e) {
         setMsg((e as Error).message);
@@ -65,7 +65,7 @@ function Checkout() {
         setBusy(false);
       }
     },
-    [paperId, format],
+    [paperId],
   );
 
   // Free demo: skip payment entirely.
@@ -133,7 +133,7 @@ function Checkout() {
           This is a sample/demo paper — download it free (watermarked) to try the export.
         </p>
         <button
-          onClick={() => doDownload(true)}
+          onClick={() => doDownload(format, true)}
           disabled={busy}
           className="mt-4 rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
         >
@@ -165,13 +165,23 @@ function Checkout() {
       ) : paid ? (
         <div className="mt-4">
           <p className="font-medium text-green-700">✓ Payment approved — no watermark.</p>
-          <button
-            onClick={() => doDownload(false)}
-            disabled={busy}
-            className="mt-3 rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
-          >
-            Download {format}
-          </button>
+          <p className="mt-1 text-sm text-stone-500">Download this paper in either format:</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => doDownload("PDF", false)}
+              disabled={busy}
+              className="rounded bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+            >
+              Download PDF
+            </button>
+            <button
+              onClick={() => doDownload("DOCX", false)}
+              disabled={busy}
+              className="rounded border px-4 py-2 text-sm font-medium hover:bg-stone-100 disabled:opacity-50"
+            >
+              Download Word
+            </button>
+          </div>
         </div>
       ) : submitted ? (
         <div className="mt-4 flex flex-col items-center gap-2 py-4 text-center">

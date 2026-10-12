@@ -32,7 +32,12 @@ export default function PrintPage({ params }: { params: Promise<{ id: string }> 
       setWatermarked(!approved);
 
       if (id === "sample" || id === "local") {
-        const s = localStorage.getItem(`qp:${id}`);
+        let s: string | null = null;
+        try {
+          s = localStorage.getItem(`qp:${id}`);
+        } catch {
+          /* storage unavailable */
+        }
         return setDoc(s ? (JSON.parse(s) as PaperDoc) : newPaper());
       }
       try {

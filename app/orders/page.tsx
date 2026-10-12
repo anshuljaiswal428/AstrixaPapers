@@ -42,10 +42,10 @@ export default function OrdersPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  async function download(o: Order) {
-    setBusy(o.id);
+  async function download(o: Order, format: "PDF" | "DOCX") {
+    setBusy(`${o.id}:${format}`);
     try {
-      await downloadPaper(o.paperId, o.format, false);
+      await downloadPaper(o.paperId, format, false);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -140,8 +140,8 @@ export default function OrdersPage() {
               <OrderRow
                 key={o.id}
                 o={o}
-                busy={busy === o.id}
-                onDownload={() => download(o)}
+                busyKey={busy}
+                onDownload={(fmt) => download(o, fmt)}
                 onChat={() => setChat({ id: o.id, title: o.paper.title })}
               />
             ))}
@@ -158,13 +158,13 @@ export default function OrdersPage() {
 
 function OrderRow({
   o,
-  busy,
+  busyKey,
   onDownload,
   onChat,
 }: {
   o: Order;
-  busy: boolean;
-  onDownload: () => void;
+  busyKey: string;
+  onDownload: (format: "PDF" | "DOCX") => void;
   onChat: () => void;
 }) {
   const approved = o.status === "paid";
@@ -174,7 +174,7 @@ function OrderRow({
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold text-stone-900">{o.paper.title}</div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-stone-500">
-          <span>No-watermark {o.format}</span>
+          <span>No-watermark · PDF &amp; Word</span>
           <span>·</span>
           <span>₹{rupees(o.amount)}</span>
           {approved && o.paidAt && (
@@ -199,14 +199,19 @@ function OrderRow({
       </button>
 
       {approved ? (
-        <button
-          disabled={busy}
-          onClick={onDownload}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-stone-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
-        >
-          <DownloadIcon />
-          {busy ? "Preparing…" : o.format}
-        </button>
+        <div className="flex shrink-0 gap-2">
+          {(["PDF", "DOCX"] as const).map((fmt) => (
+            <button
+              key={fmt}
+              disabled={busyKey === `${o.id}:${fmt}`}
+              onClick={() => onDownload(fmt)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+            >
+              <DownloadIcon />
+              {busyKey === `${o.id}:${fmt}` ? "…" : fmt === "PDF" ? "PDF" : "Word"}
+            </button>
+          ))}
+        </div>
       ) : (
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />

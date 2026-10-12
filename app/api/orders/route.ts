@@ -38,9 +38,9 @@ export async function POST(req: Request) {
   });
   if (!paper) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  // Reuse an existing paid order (don't charge twice) or an open pending one.
+  // One order per paper (either format unlocks both) — reuse any open/paid one.
   const existing = await prisma.order.findFirst({
-    where: { userId: uid, paperId: body.paperId, format, status: { in: ["paid", "pending"] } },
+    where: { userId: uid, paperId: body.paperId, status: { in: ["paid", "pending"] } },
     orderBy: { createdAt: "desc" },
   });
   if (existing) return NextResponse.json({ order: existing });

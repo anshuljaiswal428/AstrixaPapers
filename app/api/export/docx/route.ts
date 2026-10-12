@@ -25,8 +25,9 @@ export async function POST(req: Request) {
     if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
     if (wantsNoWatermark) {
+      // One approved payment for this paper unlocks BOTH PDF and Word.
       const paid = await prisma.order.findFirst({
-        where: { userId: uid, paperId, format: "DOCX", status: "paid" },
+        where: { userId: uid, paperId, status: "paid" },
         select: { id: true },
       });
       if (!paid) return NextResponse.json({ error: "payment not approved" }, { status: 402 });
