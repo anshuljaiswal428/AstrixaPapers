@@ -33,12 +33,12 @@ export function AdminOrders() {
     return () => clearInterval(t);
   }, [load]);
 
-  async function mark(id: string, paid: boolean) {
+  async function setStatus(id: string, status: "paid" | "failed" | "pending") {
     setBusy(id);
     await fetch(`/api/admin/orders/${id}/mark-paid`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paid }),
+      body: JSON.stringify({ status }),
     });
     setBusy("");
     load();
@@ -74,7 +74,7 @@ export function AdminOrders() {
                 key={o.id}
                 o={o}
                 busy={busy === o.id}
-                mark={mark}
+                setStatus={setStatus}
                 onChat={() => setChat({ id: o.id, title: o.paper.title })}
                 onViewShot={setLightbox}
                 highlight
@@ -98,7 +98,7 @@ export function AdminOrders() {
                 key={o.id}
                 o={o}
                 busy={busy === o.id}
-                mark={mark}
+                setStatus={setStatus}
                 onChat={() => setChat({ id: o.id, title: o.paper.title })}
                 onViewShot={setLightbox}
               />
@@ -129,14 +129,14 @@ export function AdminOrders() {
 function AdminCard({
   o,
   busy,
-  mark,
+  setStatus,
   onChat,
   onViewShot,
   highlight,
 }: {
   o: AdminOrder;
   busy: boolean;
-  mark: (id: string, paid: boolean) => void;
+  setStatus: (id: string, status: "paid" | "failed" | "pending") => void;
   onChat: () => void;
   onViewShot: (url: string) => void;
   highlight?: boolean;
@@ -183,31 +183,40 @@ function AdminCard({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {o.status !== "paid" && (
-          <button
-            disabled={busy}
-            onClick={() => mark(o.id, true)}
-            className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          >
-            ✓ Approve
-          </button>
-        )}
         {o.status === "pending" && (
-          <button
-            disabled={busy}
-            onClick={() => mark(o.id, false)}
-            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            Reject
-          </button>
+          <>
+            <button
+              disabled={busy}
+              onClick={() => setStatus(o.id, "paid")}
+              className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              ✓ Approve
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => setStatus(o.id, "failed")}
+              className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </>
         )}
         {o.status === "paid" && (
           <button
             disabled={busy}
-            onClick={() => mark(o.id, false)}
+            onClick={() => setStatus(o.id, "pending")}
             className="rounded-lg border px-3 py-1.5 text-sm hover:bg-stone-100 disabled:opacity-50"
           >
-            Undo
+            Undo approval
+          </button>
+        )}
+        {o.status === "failed" && (
+          <button
+            disabled={busy}
+            onClick={() => setStatus(o.id, "pending")}
+            className="rounded-lg border px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100 disabled:opacity-50"
+          >
+            Re-open
           </button>
         )}
         <button
