@@ -59,13 +59,14 @@ export default async function DashboardPage() {
               href="/orders"
               className="rounded-lg px-3 py-1.5 text-stone-600 hover:bg-stone-100"
             >
-              My requests
+              My downloads
             </Link>
             {user.role === "admin" && (
               <Link
                 href="/admin/orders"
-                className="rounded-lg px-3 py-1.5 text-stone-600 hover:bg-stone-100"
+                className="flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 font-medium text-amber-700 hover:bg-amber-100"
               >
+                <span className="rounded bg-amber-600 px-1 text-[10px] text-white">ADMIN</span>
                 Approvals
               </Link>
             )}

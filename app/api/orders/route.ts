@@ -3,14 +3,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRICE_PAISE } from "@/lib/payments";
 
-/** List the signed-in user's requests (newest first). */
+/** List the signed-in user's successful (paid) downloads — newest first. */
 export async function GET() {
   const session = await auth();
   const uid = (session?.user as { id?: string } | undefined)?.id;
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const orders = await prisma.order.findMany({
-    where: { userId: uid },
-    orderBy: { createdAt: "desc" },
+    where: { userId: uid, status: "paid" },
+    orderBy: { paidAt: "desc" },
     include: { paper: { select: { title: true } } },
   });
   return NextResponse.json({ orders });
