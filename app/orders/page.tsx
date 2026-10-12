@@ -10,6 +10,8 @@ type Order = {
   format: "PDF" | "DOCX";
   amount: number;
   status: string;
+  utr: string | null;
+  createdAt: string;
   paidAt: string | null;
   paper: { title: string };
 };
@@ -27,6 +29,9 @@ export default function OrdersPage() {
 
   useEffect(() => {
     load();
+    // Poll so an approval flips "awaiting" → downloadable without a manual refresh.
+    const t = setInterval(load, 6000);
+    return () => clearInterval(t);
   }, [load]);
 
   async function download(o: Order) {
@@ -60,34 +65,51 @@ export default function OrdersPage() {
         </a>
       </div>
       <p className="mb-5 text-sm text-stone-500">
-        Your paid, watermark-free downloads. Re-download any of them anytime.
+        Your watermark-free download requests — approved ones can be downloaded; submitted ones
+        are waiting for admin approval.
       </p>
 
       {orders.length === 0 && (
         <p className="rounded-lg border bg-white p-6 text-center text-stone-400">
-          No paid downloads yet. From a paper, choose “Download → pay to remove watermark”.
+          Nothing here yet. From a paper, choose “Download → pay to remove watermark”.
         </p>
       )}
 
       <div className="space-y-3">
-        {orders.map((o) => (
-          <div key={o.id} className="flex items-center justify-between rounded-lg border bg-white p-4">
-            <div>
-              <div className="font-medium">{o.paper.title}</div>
-              <div className="text-xs text-stone-500">
-                No-watermark {o.format} · ₹{rupees(o.amount)}
-                {o.paidAt ? ` · ${new Date(o.paidAt).toLocaleDateString()}` : ""}
-              </div>
-            </div>
-            <button
-              disabled={busy === o.id}
-              onClick={() => download(o)}
-              className="rounded bg-stone-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+        {orders.map((o) => {
+          const approved = o.status === "paid";
+          return (
+            <div
+              key={o.id}
+              className="flex items-center justify-between rounded-lg border bg-white p-4"
             >
-              {busy === o.id ? "Preparing…" : `Download ${o.format}`}
-            </button>
-          </div>
-        ))}
+              <div>
+                <div className="font-medium">{o.paper.title}</div>
+                <div className="mt-0.5 text-xs text-stone-500">
+                  No-watermark {o.format} · ₹{rupees(o.amount)}
+                  {approved && o.paidAt ? ` · ${new Date(o.paidAt).toLocaleDateString()}` : ""}
+                </div>
+                {!approved && o.utr && (
+                  <div className="mt-0.5 text-xs text-stone-400">Txn ID: {o.utr}</div>
+                )}
+              </div>
+
+              {approved ? (
+                <button
+                  disabled={busy === o.id}
+                  onClick={() => download(o)}
+                  className="rounded bg-stone-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                >
+                  {busy === o.id ? "Preparing…" : `Download ${o.format}`}
+                </button>
+              ) : (
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                  Awaiting approval
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </main>
   );

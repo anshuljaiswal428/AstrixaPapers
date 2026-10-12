@@ -3,14 +3,22 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRICE_PAISE } from "@/lib/payments";
 
-/** List the signed-in user's successful (paid) downloads — newest first. */
+/**
+ * List the signed-in user's download records:
+ *  - approved (paid), and
+ *  - submitted but awaiting approval (pending with a transaction ID).
+ * Orders created but never paid (no UTR) are omitted as noise.
+ */
 export async function GET() {
   const session = await auth();
   const uid = (session?.user as { id?: string } | undefined)?.id;
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const orders = await prisma.order.findMany({
-    where: { userId: uid, status: "paid" },
-    orderBy: { paidAt: "desc" },
+    where: {
+      userId: uid,
+      OR: [{ status: "paid" }, { status: "pending", utr: { not: null } }],
+    },
+    orderBy: { createdAt: "desc" },
     include: { paper: { select: { title: true } } },
   });
   return NextResponse.json({ orders });

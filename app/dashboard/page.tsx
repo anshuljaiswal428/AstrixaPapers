@@ -61,15 +61,6 @@ export default async function DashboardPage() {
             >
               My downloads
             </Link>
-            {user.role === "admin" && (
-              <Link
-                href="/admin/orders"
-                className="flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 font-medium text-amber-700 hover:bg-amber-100"
-              >
-                <span className="rounded bg-amber-600 px-1 text-[10px] text-white">ADMIN</span>
-                Approvals
-              </Link>
-            )}
             <span
               className="ml-2 grid h-8 w-8 place-items-center rounded-full bg-stone-200 text-xs font-semibold text-stone-700"
               title={user.name}
