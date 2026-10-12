@@ -25,7 +25,7 @@ body {
   width: 210mm;
   min-height: 297mm;
   margin: 0 auto;
-  padding: 16mm 14mm;
+  padding: 12mm 14mm;
   background: #fff;
   color: #000;
   font-family: "Times New Roman", Georgia, serif;
@@ -54,27 +54,27 @@ body {
 .qp-header {
   text-align: center;
   position: relative;
-  padding-bottom: 8px;
-  margin-bottom: 12px;
+  line-height: 1.2;
+  padding-bottom: 5px;
+  margin-bottom: 8px;
   border-bottom: 1.5px solid #000;
 }
 .qp-school {
-  font-size: 16pt;
+  font-size: 15pt;
   font-weight: 700;
   text-transform: uppercase;
-  line-height: 1.2;
+  line-height: 1.1;
   /* Keep the centered title clear of the top-right marks box on both sides. */
   padding: 0 104px;
 }
 .qp-exam {
   font-size: 13pt;
   font-weight: 700;
-  margin-top: 2px;
   padding: 0 104px;
 }
 .qp-meta-row {
   font-weight: 600;
-  margin-top: 4px;
+  margin-top: 1px;
 }
 .qp-meta-split {
   display: flex;
@@ -103,8 +103,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 6px;
   text-align: left;
   font-weight: 600;
 }
