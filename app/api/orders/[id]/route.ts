@@ -16,14 +16,25 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json({ order });
 }
 
-/** Attach the user-submitted UPI transaction reference (UTR). */
+/** Attach the UPI transaction reference (UTR) + payment screenshot. Both required. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const uid = await uidOf();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
-  const body = (await req.json().catch(() => ({}))) as { utr?: string };
+  const body = (await req.json().catch(() => ({}))) as { utr?: string; screenshotUrl?: string };
+
+  const utr = (body.utr ?? "").trim();
+  const screenshot = body.screenshotUrl ?? "";
+  if (!utr) return NextResponse.json({ error: "Transaction ID is required." }, { status: 400 });
+  if (!screenshot.startsWith("data:image/")) {
+    return NextResponse.json({ error: "A payment screenshot is required." }, { status: 400 });
+  }
+
   const order = await prisma.order.findFirst({ where: { id, userId: uid }, select: { id: true } });
   if (!order) return NextResponse.json({ error: "not found" }, { status: 404 });
-  await prisma.order.update({ where: { id }, data: { utr: body.utr ?? null } });
+  await prisma.order.update({
+    where: { id },
+    data: { utr, screenshotUrl: screenshot },
+  });
   return NextResponse.json({ ok: true });
 }

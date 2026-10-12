@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import { downloadPaper } from "@/lib/clientExport";
 import { PRICE_PAISE, rupees, upiLink, isFreePaperId } from "@/lib/payments";
+import { fileToScaledDataUrl } from "@/lib/image";
 
 type Order = { id: string; status: string; amount: number; format: string };
 
@@ -23,11 +24,13 @@ function Checkout() {
   const [needsLogin, setNeedsLogin] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [screenshot, setScreenshot] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const submitUtr = useCallback(async () => {
     if (!order) return;
-    if (!utr.trim()) {
-      setMsg("Please enter your UPI transaction ID.");
+    if (!utr.trim() || !screenshot) {
+      setMsg("Both the transaction ID and a payment screenshot are required.");
       return;
     }
     setBusy(true);
@@ -36,18 +39,21 @@ function Checkout() {
       const res = await fetch(`/api/orders/${order.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ utr }),
+        body: JSON.stringify({ utr, screenshotUrl: screenshot }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(d.error ?? "Could not submit.");
+      }
       setSubmitted(true);
       // Take them to their requests after a moment so they can track approval.
       setTimeout(() => router.push("/orders"), 2200);
-    } catch {
-      setMsg("Could not submit. Please try again.");
+    } catch (e) {
+      setMsg((e as Error).message);
     } finally {
       setBusy(false);
     }
-  }, [order, utr, router]);
+  }, [order, utr, screenshot, router]);
 
   const vpa = process.env.NEXT_PUBLIC_UPI_VPA ?? "yourname@okaxis";
   const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
@@ -212,31 +218,80 @@ function Checkout() {
             <img src={qr} alt="UPI QR" className="rounded border bg-white p-2" width={240} height={240} />
           )}
           <p className="text-xs text-stone-500">
-            Paying <strong>{vpa}</strong>. After paying, enter the UPI reference / UTR below and
-            submit — your download unlocks once the payment is confirmed.
+            Paying <strong>{vpa}</strong>. After paying, enter the UPI transaction ID and upload a
+            screenshot of the successful payment. Both are required.
           </p>
-          <div className="flex gap-2">
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              1. UPI transaction ID / UTR <span className="text-red-500">*</span>
+            </label>
             <input
               value={utr}
               onChange={(e) => setUtr(e.target.value)}
-              placeholder="UPI transaction ID / UTR"
-              className="flex-1 rounded border px-2 py-1 text-sm"
+              placeholder="e.g. 4312XXXXXX89"
+              className="w-full rounded border px-2 py-1.5 text-sm"
             />
-            <button
-              onClick={() => {
-                if (!utr.trim()) {
-                  setMsg("Please enter your UPI transaction ID.");
-                } else {
-                  setMsg("");
-                  setConfirming(true);
-                }
-              }}
-              disabled={busy}
-              className="rounded bg-stone-900 px-3 py-1 text-sm text-white disabled:opacity-50"
-            >
-              {busy ? "Submitting…" : "Submit"}
-            </button>
           </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              2. Payment screenshot <span className="text-red-500">*</span>
+            </label>
+            {screenshot ? (
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={screenshot}
+                  alt="payment screenshot"
+                  className="h-16 w-16 rounded border object-cover"
+                />
+                <button
+                  onClick={() => setScreenshot("")}
+                  className="text-xs text-red-600 hover:underline"
+                >
+                  Remove / change
+                </button>
+              </div>
+            ) : (
+              <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-stone-300 px-3 py-4 text-sm text-stone-500 hover:bg-stone-50">
+                {uploading ? "Processing…" : "📷 Tap to upload screenshot"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploading(true);
+                    try {
+                      setScreenshot(await fileToScaledDataUrl(file));
+                    } catch {
+                      setMsg("Could not read that image. Try another.");
+                    } finally {
+                      setUploading(false);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </label>
+            )}
+          </div>
+
+          <button
+            onClick={() => {
+              if (!utr.trim() || !screenshot) {
+                setMsg("Both the transaction ID and a payment screenshot are required.");
+              } else {
+                setMsg("");
+                setConfirming(true);
+              }
+            }}
+            disabled={busy || uploading}
+            className="w-full rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {busy ? "Submitting…" : "Submit for approval"}
+          </button>
           <p className="text-xs text-stone-400">Waiting for confirmation… (this page auto-refreshes)</p>
         </div>
       )}
@@ -247,13 +302,27 @@ function Checkout() {
         <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
           <h3 className="text-lg font-semibold text-stone-900">Confirm submission</h3>
           <p className="mt-2 text-sm text-stone-600">
-            Please double-check your UPI transaction ID before submitting:
+            Please double-check these before submitting:
           </p>
-          <div className="mt-3 break-all rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-center font-mono text-sm font-semibold text-stone-800">
-            {utr}
+          <div className="mt-3">
+            <div className="text-xs text-stone-500">Transaction ID</div>
+            <div className="mt-1 break-all rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-center font-mono text-sm font-semibold text-stone-800">
+              {utr}
+            </div>
           </div>
+          {screenshot && (
+            <div className="mt-3">
+              <div className="text-xs text-stone-500">Payment screenshot</div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={screenshot}
+                alt="payment screenshot"
+                className="mt-1 max-h-48 w-full rounded-lg border object-contain"
+              />
+            </div>
+          )}
           <p className="mt-2 text-xs text-stone-500">
-            Make sure it exactly matches the payment you made — this is what the admin verifies.
+            Make sure both match the payment you made — this is what the admin verifies.
           </p>
           <div className="mt-5 flex justify-end gap-2">
             <button

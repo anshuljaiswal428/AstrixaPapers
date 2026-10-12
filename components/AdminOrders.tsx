@@ -10,6 +10,7 @@ type AdminOrder = {
   format: string;
   amount: number;
   utr: string | null;
+  screenshotUrl: string | null;
   createdAt: string;
   user: { name: string; phone: string };
   paper: { title: string };
@@ -19,6 +20,7 @@ export function AdminOrders() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [busy, setBusy] = useState("");
   const [chat, setChat] = useState<{ id: string; title: string } | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/orders");
@@ -74,6 +76,7 @@ export function AdminOrders() {
                 busy={busy === o.id}
                 mark={mark}
                 onChat={() => setChat({ id: o.id, title: o.paper.title })}
+                onViewShot={setLightbox}
                 highlight
               />
             ))}
@@ -97,6 +100,7 @@ export function AdminOrders() {
                 busy={busy === o.id}
                 mark={mark}
                 onChat={() => setChat({ id: o.id, title: o.paper.title })}
+                onViewShot={setLightbox}
               />
             ))}
           </div>
@@ -104,6 +108,20 @@ export function AdminOrders() {
       </section>
 
       {chat && <OrderChat orderId={chat.id} title={chat.title} onClose={() => setChat(null)} />}
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          onClick={() => setLightbox(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightbox}
+            alt="payment screenshot"
+            className="max-h-[90vh] max-w-full rounded-lg shadow-2xl"
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -113,12 +131,14 @@ function AdminCard({
   busy,
   mark,
   onChat,
+  onViewShot,
   highlight,
 }: {
   o: AdminOrder;
   busy: boolean;
   mark: (id: string, paid: boolean) => void;
   onChat: () => void;
+  onViewShot: (url: string) => void;
   highlight?: boolean;
 }) {
   return (
@@ -147,7 +167,19 @@ function AdminCard({
             </div>
           )}
         </div>
-        <StatusBadge status={o.status} />
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <StatusBadge status={o.status} />
+          {o.screenshotUrl && (
+            <button onClick={() => onViewShot(o.screenshotUrl!)} title="View payment screenshot">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={o.screenshotUrl}
+                alt="payment proof"
+                className="h-14 w-14 rounded border object-cover transition hover:ring-2 hover:ring-indigo-400"
+              />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">

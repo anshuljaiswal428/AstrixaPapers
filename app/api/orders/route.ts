@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRICE_PAISE } from "@/lib/payments";
+import { purgeApprovedScreenshots } from "@/lib/cleanup";
 
 /**
  * List the signed-in user's download records:
@@ -12,6 +13,7 @@ import { PRICE_PAISE } from "@/lib/payments";
 export async function GET() {
   const uid = await currentUserId();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  await purgeApprovedScreenshots();
   const orders = await prisma.order.findMany({
     where: {
       userId: uid,
