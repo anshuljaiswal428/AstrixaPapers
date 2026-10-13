@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/adminAuth";
-import { AdminOrders } from "@/components/AdminOrders";
+import { AdminPanel } from "@/components/AdminPanel";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 
 export default async function AdminPage() {
@@ -10,7 +10,7 @@ export default async function AdminPage() {
     <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100">
       {/* Top bar */}
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-600 text-sm font-bold text-white">
               A
@@ -21,7 +21,7 @@ export default async function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         {/* Hero */}
         <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25">
@@ -30,16 +30,16 @@ export default async function AdminPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="rounded bg-white/25 px-1.5 py-0.5 text-[10px] font-bold">ADMIN</span>
-              <h1 className="text-2xl font-semibold">Payment requests</h1>
+              <h1 className="text-2xl font-semibold">Admin dashboard</h1>
             </div>
             <p className="mt-0.5 text-sm text-amber-100">
-              Verify UPI transactions, approve downloads, and reply to help chats.
+              Verify payments, browse registered users, and reply to help chats.
             </p>
           </div>
         </div>
 
         <div className="mt-6">
-          <AdminOrders />
+          <AdminPanel />
         </div>
       </main>
     </div>

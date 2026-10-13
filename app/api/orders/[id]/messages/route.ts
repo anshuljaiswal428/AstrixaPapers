@@ -43,8 +43,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const text = (body ?? "").toString().trim();
   if (!text) return NextResponse.json({ error: "empty message" }, { status: 400 });
 
+  // An image message is a single inline data URL; keep it whole (but capped).
+  const isImage = text.startsWith("data:image/");
+  const stored = isImage ? text.slice(0, 3_000_000) : text.slice(0, 2000);
+
   const message = await prisma.message.create({
-    data: { orderId: id, sender: role, body: text.slice(0, 2000) },
+    data: { orderId: id, sender: role, body: stored },
   });
 
   // Keep only the newest 15; delete the rest.

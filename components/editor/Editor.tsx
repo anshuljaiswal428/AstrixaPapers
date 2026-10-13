@@ -22,6 +22,16 @@ export function Editor({
   const [saving, setSaving] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const firstRender = useRef(true);
 
+  // Scale the A4 preview down so the whole page width fits the pane (never enlarge).
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+
+  // Mobile: draggable divider to resize the preview (top) vs the builder (bottom).
+  const splitRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const [previewH, setPreviewH] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
   // Immutable update helper.
   const update = useCallback((fn: (d: PaperDoc) => PaperDoc) => {
     setDoc((d) => fn(structuredClone(d)));
@@ -56,17 +66,61 @@ export function Editor({
 
   const total = paperTotalMarks(doc);
 
+  // Fit the fixed-width A4 paper (210mm ≈ 794px) into whatever width the pane has.
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return;
+    const PAPER_PX = 794;
+    const compute = () => {
+      const w = el.clientWidth;
+      if (w) setZoom(Math.min(1, w / PAPER_PX));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Track desktop so the dragged height only applies to the stacked mobile layout.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  const startDrag = (e: React.PointerEvent) => {
+    draggingRef.current = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onDrag = (e: React.PointerEvent) => {
+    if (!draggingRef.current || !splitRef.current) return;
+    const rect = splitRef.current.getBoundingClientRect();
+    // Preview sits at the top of the split; its height tracks the pointer.
+    const h = Math.min(Math.max(e.clientY - rect.top, 100), rect.height - 140);
+    setPreviewH(h);
+  };
+  const endDrag = (e: React.PointerEvent) => {
+    draggingRef.current = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* no capture */
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col bg-stone-100">
       {/* Toolbar */}
-      <div className="qp-no-print flex items-center gap-3 border-b bg-white px-4 py-2">
-        <a href="/dashboard" className="text-sm text-stone-500 hover:underline">
+      <div className="qp-no-print flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-white px-3 py-2 sm:px-4">
+        <a href="/dashboard" className="shrink-0 text-sm text-stone-500 hover:underline">
           ← Papers
         </a>
         <input
           value={doc.title}
           onChange={(e) => update((d) => ({ ...d, title: e.target.value }))}
-          className="flex-1 rounded border px-2 py-1 text-sm font-medium"
+          className="order-last w-full min-w-0 rounded border px-2 py-1 text-sm font-medium sm:order-none sm:flex-1"
         />
         <span className="text-xs text-stone-500">Total: {total} marks</span>
         <span className="text-xs text-stone-400">
@@ -81,9 +135,9 @@ export function Editor({
         <DownloadMenu paperId={paperId} />
       </div>
 
-      {/* Split view */}
-      <div className="flex min-h-0 flex-1">
-        <div className="w-[46%] overflow-y-auto border-r bg-stone-50 p-4">
+      {/* Mobile: preview on top, paper maker below. Large screens: side-by-side. */}
+      <div ref={splitRef} className="flex min-h-0 flex-1 flex-col-reverse lg:flex-row">
+        <div className="w-full min-h-0 flex-1 overflow-y-auto bg-stone-50 p-3 sm:p-4 lg:w-[46%] lg:flex-none lg:border-r">
           <HeaderEditor doc={doc} update={update} />
           <div className="mt-4 space-y-4">
             {doc.sections.map((section, si) => (
@@ -131,9 +185,30 @@ export function Editor({
           </button>
         </div>
 
-        {/* Live preview */}
-        <div className="flex-1 overflow-y-auto bg-stone-200 p-6">
-          <PaperPreview doc={doc} watermark={WATERMARK} watermarkFixed={false} />
+        {/* Drag handle (mobile only) — drag up/down to resize preview vs builder. */}
+        <div
+          onPointerDown={startDrag}
+          onPointerMove={onDrag}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          title="Drag to resize"
+          className="flex h-6 w-full shrink-0 cursor-row-resize touch-none items-center justify-center border-y bg-white lg:hidden"
+        >
+          <span className="h-1 w-10 rounded-full bg-stone-300" />
+        </div>
+
+        {/* Live preview — resizable on top for phones, full right pane on desktop */}
+        <div
+          style={
+            !isDesktop && previewH != null ? { height: previewH, maxHeight: "none" } : undefined
+          }
+          className="max-h-[45vh] w-full shrink-0 overflow-auto bg-stone-200 p-3 sm:p-6 lg:max-h-none lg:w-auto lg:flex-1 lg:shrink"
+        >
+          <div ref={previewRef} className="w-full">
+            <div style={{ zoom }}>
+              <PaperPreview doc={doc} watermark={WATERMARK} watermarkFixed={false} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -329,7 +404,7 @@ function QuestionCard({
         onChange={(e) => onChange({ ...q, prompt: e.target.value })}
         className="mb-1 w-full rounded border px-2 py-1 text-sm"
       />
-      <div className="mb-2 flex items-center gap-3 text-xs text-stone-500">
+      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500">
         <label className="flex items-center gap-1">
           count
           <input

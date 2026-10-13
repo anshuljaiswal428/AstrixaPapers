@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { rupees } from "@/lib/payments";
 import { downloadPaper } from "@/lib/clientExport";
 import { OrderChat } from "@/components/OrderChat";
+import { PaperPreviewModal } from "@/components/PaperPreviewModal";
+import { hasUnread, markSeen, type LastMessage } from "@/lib/chatSeen";
 
 type Order = {
   id: string;
@@ -15,7 +17,9 @@ type Order = {
   utr: string | null;
   createdAt: string;
   paidAt: string | null;
+  screenshotUrl: string | null;
   paper: { title: string };
+  lastMessage: LastMessage;
 };
 
 export default function OrdersPage() {
@@ -24,6 +28,16 @@ export default function OrdersPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [chat, setChat] = useState<{ id: string; title: string } | null>(null);
+  const [preview, setPreview] = useState<{ paperId: string; title: string } | null>(null);
+  const [shot, setShot] = useState<string | null>(null);
+  // Bumped when a chat is opened/closed so unread dots recompute immediately.
+  const [, setSeenTick] = useState(0);
+
+  function openChat(o: Order) {
+    markSeen(o.id, o.lastMessage?.createdAt);
+    setSeenTick((n) => n + 1);
+    setChat({ id: o.id, title: o.paper.title });
+  }
 
   const load = useCallback(async () => {
     const res = await fetch("/api/orders");
@@ -60,7 +74,7 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100">
       {/* Top bar */}
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
               A
@@ -76,7 +90,7 @@ export default function OrdersPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         {/* Hero */}
         <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25">
@@ -141,8 +155,11 @@ export default function OrdersPage() {
                 key={o.id}
                 o={o}
                 busyKey={busy}
+                unread={hasUnread(o.id, o.lastMessage, "user")}
+                onView={() => setPreview({ paperId: o.paperId, title: o.paper.title })}
+                onViewShot={o.screenshotUrl ? () => setShot(o.screenshotUrl) : undefined}
                 onDownload={(fmt) => download(o, fmt)}
-                onChat={() => setChat({ id: o.id, title: o.paper.title })}
+                onChat={() => openChat(o)}
               />
             ))}
           </div>
@@ -150,7 +167,37 @@ export default function OrdersPage() {
       </main>
 
       {chat && (
-        <OrderChat orderId={chat.id} title={chat.title} onClose={() => setChat(null)} />
+        <OrderChat
+          orderId={chat.id}
+          title={chat.title}
+          onClose={() => {
+            setChat(null);
+            setSeenTick((n) => n + 1);
+          }}
+        />
+      )}
+
+      {preview && (
+        <PaperPreviewModal
+          endpoint={`/api/papers/${preview.paperId}`}
+          fallbackTitle={preview.title}
+          onClose={() => setPreview(null)}
+        />
+      )}
+
+      {shot && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-6"
+          onClick={() => setShot(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={shot}
+            alt="payment screenshot"
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[85vh] max-w-full rounded-lg shadow-2xl"
+          />
+        </div>
       )}
     </div>
   );
@@ -159,48 +206,80 @@ export default function OrdersPage() {
 function OrderRow({
   o,
   busyKey,
+  unread,
+  onView,
+  onViewShot,
   onDownload,
   onChat,
 }: {
   o: Order;
   busyKey: string;
+  unread: boolean;
+  onView: () => void;
+  onViewShot?: () => void;
   onDownload: (format: "PDF" | "DOCX") => void;
   onChat: () => void;
 }) {
   const approved = o.status === "paid";
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:shadow-md">
-      <FormatIcon format={o.format} />
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-stone-900">{o.paper.title}</div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-stone-500">
-          <span>No-watermark · PDF &amp; Word</span>
-          <span>·</span>
-          <span>₹{rupees(o.amount)}</span>
-          {approved && o.paidAt && (
-            <>
-              <span>·</span>
-              <span>{new Date(o.paidAt).toLocaleDateString("en-GB")}</span>
-            </>
+    <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex min-w-0 items-center gap-3 sm:flex-1 sm:gap-4">
+        <FormatIcon format={o.format} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-semibold text-stone-900">{o.paper.title}</div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-stone-500">
+            <span>No-watermark · PDF &amp; Word</span>
+            <span>·</span>
+            <span>₹{rupees(o.amount)}</span>
+            {approved && o.paidAt && (
+              <>
+                <span>·</span>
+                <span>{new Date(o.paidAt).toLocaleDateString("en-GB")}</span>
+              </>
+            )}
+          </div>
+          {!approved && o.utr && (
+            <div className="mt-0.5 truncate font-mono text-[11px] text-stone-400">Txn: {o.utr}</div>
           )}
         </div>
-        {!approved && o.utr && (
-          <div className="mt-0.5 truncate font-mono text-[11px] text-stone-400">Txn: {o.utr}</div>
-        )}
       </div>
 
-      <button
-        onClick={onChat}
-        title="Chat with admin about this request"
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
-      >
-        <ChatIcon />
-        Help
-      </button>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <button
+          onClick={onView}
+          title="Preview this paper"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
+        >
+          <EyeIcon />
+          View
+        </button>
+        {onViewShot && (
+          <button
+            onClick={onViewShot}
+            title="View your payment screenshot"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
+          >
+            <ImageIcon />
+            Screenshot
+          </button>
+        )}
+        <button
+          onClick={onChat}
+          title="Chat with admin about this request"
+          className="relative inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
+        >
+          <ChatIcon />
+          Help
+          {unread && (
+            <span className="absolute -right-1 -top-1 flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500 ring-2 ring-white" />
+            </span>
+          )}
+        </button>
 
-      {approved ? (
-        <div className="flex shrink-0 gap-2">
-          {(["PDF", "DOCX"] as const).map((fmt) => (
+        {approved ? (
+          (["PDF", "DOCX"] as const).map((fmt) => (
             <button
               key={fmt}
               disabled={busyKey === `${o.id}:${fmt}`}
@@ -210,22 +289,52 @@ function OrderRow({
               <DownloadIcon />
               {busyKey === `${o.id}:${fmt}` ? "…" : fmt === "PDF" ? "PDF" : "Word"}
             </button>
-          ))}
-        </div>
-      ) : (
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-          Awaiting approval
-        </span>
-      )}
+          ))
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+            Awaiting approval
+          </span>
+        )}
+      </div>
     </div>
   );
 }
 
 function ChatIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z" />
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="M8 9h8" />
+      <path d="M8 13h5" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-4.5-4.5L7 20" />
     </svg>
   );
 }

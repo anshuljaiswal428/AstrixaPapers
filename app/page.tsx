@@ -14,7 +14,7 @@ export default async function Home() {
       <div className="flex flex-col items-center gap-8">
         <div>
           <h1 className="bg-gradient-to-r from-indigo-700 via-violet-700 to-blue-700 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
-            Astrixa Papers
+            Paper Rankers
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-stone-600">
             Design exam papers — MCQs with images, match-the-following, fill-in-the-blanks,

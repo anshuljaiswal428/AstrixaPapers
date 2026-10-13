@@ -352,12 +352,14 @@ function Checkout() {
 
 function Shell({ children, backHref }: { children: React.ReactNode; backHref: string }) {
   return (
-    <main className="mx-auto mt-16 max-w-md rounded-xl border bg-white p-6 shadow-sm">
-      {children}
-      <div className="mt-6 text-sm">
-        <a href={backHref} className="text-stone-500 hover:underline">
-          ← Back to editor
-        </a>
+    <main className="flex justify-center px-4 pt-10 sm:pt-16">
+      <div className="w-full max-w-md rounded-xl border bg-white p-5 shadow-sm sm:p-6">
+        {children}
+        <div className="mt-6 text-sm">
+          <a href={backHref} className="text-stone-500 hover:underline">
+            ← Back to editor
+          </a>
+        </div>
       </div>
     </main>
   );

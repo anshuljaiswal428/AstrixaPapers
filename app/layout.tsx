@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Astrixa Papers",
+  title: "Paper Rankers",
   description: "Design and export question papers — by Astrixa Technologies",
 };
 

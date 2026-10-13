@@ -49,7 +49,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100">
       {/* Top bar */}
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
               A
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         {/* Hero */}
         <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white sm:flex-row sm:items-center sm:justify-between">
           <div>

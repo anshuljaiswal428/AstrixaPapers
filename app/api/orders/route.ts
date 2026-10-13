@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRICE_PAISE } from "@/lib/payments";
-import { purgeApprovedScreenshots } from "@/lib/cleanup";
 
 /**
  * List the signed-in user's download records:
@@ -13,16 +12,20 @@ import { purgeApprovedScreenshots } from "@/lib/cleanup";
 export async function GET() {
   const uid = await currentUserId();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  await purgeApprovedScreenshots();
   const orders = await prisma.order.findMany({
     where: {
       userId: uid,
       OR: [{ status: "paid" }, { status: "pending", utr: { not: null } }],
     },
     orderBy: { createdAt: "desc" },
-    include: { paper: { select: { title: true } } },
+    include: {
+      paper: { select: { title: true } },
+      messages: { orderBy: { createdAt: "desc" }, take: 1, select: { sender: true, createdAt: true } },
+    },
   });
-  return NextResponse.json({ orders });
+  // Expose only the latest message (for the unread chat indicator).
+  const shaped = orders.map(({ messages, ...o }) => ({ ...o, lastMessage: messages[0] ?? null }));
+  return NextResponse.json({ orders: shaped });
 }
 
 /** Create (or reuse an open) order for a paper + format. */

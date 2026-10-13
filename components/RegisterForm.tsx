@@ -33,7 +33,8 @@ export function RegisterForm() {
   }
 
   return (
-    <main className="mx-auto mt-20 max-w-sm rounded-xl border bg-white p-6 shadow-sm">
+    <main className="flex justify-center px-4 pt-14 sm:pt-20">
+      <div className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
       <h1 className="text-xl font-semibold">Create account</h1>
       <form onSubmit={submit} className="mt-4 space-y-3">
         <input
@@ -75,6 +76,7 @@ export function RegisterForm() {
           Sign in
         </a>
       </p>
+      </div>
     </main>
   );
 }
