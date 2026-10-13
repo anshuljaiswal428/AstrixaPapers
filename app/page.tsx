@@ -45,8 +45,7 @@ export default async function Home() {
       </div>
 
       <footer className="absolute bottom-6 text-sm text-stone-500">
-        Developed with <span className="text-red-500">♥</span> by{" "}
-        <span className="font-semibold text-indigo-700">Astrixa Technologies</span>
+        Product by <span className="font-semibold text-indigo-700">Astrixa Technologies</span>
       </footer>
     </main>
   );
