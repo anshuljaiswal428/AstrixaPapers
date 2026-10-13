@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import { downloadPaper } from "@/lib/clientExport";
-import { PRICE_PAISE, rupees, upiLink, isFreePaperId } from "@/lib/payments";
+import { rupees, upiLink, isFreePaperId } from "@/lib/payments";
 import { fileToScaledDataUrl } from "@/lib/image";
 
 type Order = { id: string; status: string; amount: number; format: string };

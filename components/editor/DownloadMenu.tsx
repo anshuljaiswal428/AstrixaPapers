@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { downloadPaper } from "@/lib/clientExport";
-import { rupees, PRICE_PAISE, isFreePaperId } from "@/lib/payments";
+import { isFreePaperId } from "@/lib/payments";
 
 /**
  * Download menu with two tiers:
@@ -13,6 +13,21 @@ export function DownloadMenu({ paperId }: { paperId: string }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [authPrompt, setAuthPrompt] = useState(false);
+  const [price, setPrice] = useState<string | null>(null);
+
+  // The price lives in a server-only env var; fetch it for display.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/price")
+      .then((r) => r.json())
+      .then((d: { rupees?: string }) => {
+        if (!cancelled && d.rupees) setPrice(d.rupees);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function free(format: "PDF" | "DOCX") {
     setBusy(format);
@@ -67,7 +82,7 @@ export function DownloadMenu({ paperId }: { paperId: string }) {
             </button>
 
             <div className="mt-1 border-t px-2 pt-2 pb-1 text-xs font-semibold uppercase text-stone-400">
-              No watermark (₹{rupees(PRICE_PAISE)})
+              No watermark{price ? ` (₹${price})` : ""}
             </div>
             <button
               onClick={() => paid("PDF")}

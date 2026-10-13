@@ -4,7 +4,9 @@
  * reaches status "paid" — everything else (orders table, download gating) stays.
  */
 
-export const PRICE_PAISE = Number(process.env.NEXT_PUBLIC_PRICE_PAISE ?? "1000");
+// Server-only price (no NEXT_PUBLIC_ prefix → never exposed in the browser bundle).
+// The client reads it via GET /api/price instead of inlining it at build time.
+export const PRICE_PAISE = Number(process.env.PRICE_PAISE ?? "1000");
 
 /** Watermark printed on free downloads; removed after a paid, approved order. */
 export const WATERMARK = "Astrixa Technologies";
