@@ -55,7 +55,7 @@ function Checkout() {
     }
   }, [order, utr, screenshot, router]);
 
-  const vpa = process.env.NEXT_PUBLIC_UPI_VPA ?? "yourname@okaxis";
+  const vpa = process.env.UPI_VPA ?? "yourname@okaxis";
   const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
 
   const doDownload = useCallback(

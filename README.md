@@ -43,7 +43,7 @@ See `.env.example`. Key ones:
 |---|---|
 | `DATABASE_URL` / `DIRECT_URL` | Supabase Postgres (pooled / direct) |
 | `AUTH_SECRET` | `openssl rand -base64 32` |
-| `NEXT_PUBLIC_UPI_VPA` | your UPI id, e.g. `name@okaxis` |
+| `UPI_VPA` | your UPI id, e.g. `name@okaxis` |
 | `NEXT_PUBLIC_UPI_PAYEE_NAME` | name shown in the UPI app |
 | `NEXT_PUBLIC_PRICE_PAISE` | price per download in paise (`1000` = ₹10) |
 
