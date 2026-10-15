@@ -4,10 +4,11 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import { downloadPaper } from "@/lib/clientExport";
-import { rupees, upiLink, isFreePaperId } from "@/lib/payments";
+import { rupees, isFreePaperId } from "@/lib/payments";
 import { fileToScaledDataUrl } from "@/lib/image";
 
 type Order = { id: string; status: string; amount: number; format: string };
+type Upi = { link: string; vpa: string };
 
 function Checkout() {
   const sp = useSearchParams();
@@ -17,6 +18,7 @@ function Checkout() {
 
   const free = isFreePaperId(paperId);
   const [order, setOrder] = useState<Order | null>(null);
+  const [vpa, setVpa] = useState("");
   const [qr, setQr] = useState<string>("");
   const [utr, setUtr] = useState("");
   const [msg, setMsg] = useState("");
@@ -54,9 +56,6 @@ function Checkout() {
       setBusy(false);
     }
   }, [order, utr, screenshot, router]);
-
-  const vpa = process.env.UPI_VPA ?? "yourname@okaxis";
-  const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
 
   const doDownload = useCallback(
     async (fmt: "PDF" | "DOCX", watermark: boolean) => {
@@ -98,17 +97,11 @@ function Checkout() {
           );
           return;
         }
-        const data = (await res.json()) as { order?: Order };
-        if (data.order) {
+        const data = (await res.json()) as { order?: Order; upi?: Upi };
+        if (data.order && data.upi) {
           setOrder(data.order);
-          const link = upiLink({
-            vpa,
-            payeeName: payee,
-            amountPaise: data.order.amount,
-            note: `Paper ${paperId}`,
-            orderId: data.order.id,
-          });
-          setQr(await QRCode.toDataURL(link, { width: 240 }));
+          setVpa(data.upi.vpa);
+          setQr(await QRCode.toDataURL(data.upi.link, { width: 240 }));
         } else {
           setMsg("Could not start checkout.");
         }
@@ -116,7 +109,7 @@ function Checkout() {
         setMsg(`Could not start checkout: ${(e as Error).message}`);
       }
     })();
-  }, [free, paperId, format, vpa, payee]);
+  }, [free, paperId, format]);
 
   // Poll for admin/gateway confirmation.
   useEffect(() => {

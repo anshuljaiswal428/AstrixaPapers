@@ -1,7 +1,26 @@
 import { NextResponse } from "next/server";
 import { currentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PRICE_PAISE } from "@/lib/payments";
+import { PRICE_PAISE, upiLink } from "@/lib/payments";
+
+/**
+ * Build the UPI QR payload server-side so the VPA/payee stay server-only
+ * (no NEXT_PUBLIC_ prefix needed). Falls back to the old public names so it
+ * keeps working whatever the env var is called.
+ */
+function buildUpi(order: { id: string; paperId: string; amount: number }) {
+  const vpa = process.env.UPI_VPA ?? process.env.NEXT_PUBLIC_UPI_VPA ?? "yourname@okaxis";
+  const payeeName =
+    process.env.UPI_PAYEE_NAME ?? process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
+  const link = upiLink({
+    vpa,
+    payeeName,
+    amountPaise: order.amount,
+    note: `Paper ${order.paperId}`,
+    orderId: order.id,
+  });
+  return { link, vpa };
+}
 
 /**
  * List the signed-in user's download records:
@@ -48,7 +67,7 @@ export async function POST(req: Request) {
     where: { userId: uid, paperId: body.paperId, status: { in: ["paid", "pending"] } },
     orderBy: { createdAt: "desc" },
   });
-  if (existing) return NextResponse.json({ order: existing });
+  if (existing) return NextResponse.json({ order: existing, upi: buildUpi(existing) });
 
   const order = await prisma.order.create({
     data: {
@@ -60,5 +79,5 @@ export async function POST(req: Request) {
       status: "pending",
     },
   });
-  return NextResponse.json({ order });
+  return NextResponse.json({ order, upi: buildUpi(order) });
 }
