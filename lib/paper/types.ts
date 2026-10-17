@@ -149,6 +149,8 @@ export type PaperHeader = {
 /** The full paper document stored in Paper.doc (JSON). */
 export type PaperDoc = {
   title: string;
+  /** Which layout template this paper uses (see lib/templates.ts). Defaults to "template-1". */
+  templateId?: string;
   header: PaperHeader;
   sections: Section[];
 };

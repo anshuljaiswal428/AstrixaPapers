@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/adminAuth";
 import { AdminPanel } from "@/components/AdminPanel";
@@ -39,7 +40,9 @@ export default async function AdminPage() {
         </div>
 
         <div className="mt-6">
-          <AdminPanel />
+          <Suspense fallback={<div className="text-sm text-stone-500">Loading…</div>}>
+            <AdminPanel />
+          </Suspense>
         </div>
       </main>
     </div>

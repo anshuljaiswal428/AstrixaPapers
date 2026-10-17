@@ -1,0 +1,187 @@
+"use client";
+
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import QRCode from "qrcode";
+import { downloadPaper } from "@/lib/clientExport";
+import { PRICE_PAISE, rupees, upiLink, isFreePaperId } from "@/lib/payments";
+
+type Order = { id: string; status: string; amount: number; format: string };
+
+function Checkout() {
+  const sp = useSearchParams();
+  const paperId = sp.get("paper") ?? "";
+  const format = (sp.get("format") === "DOCX" ? "DOCX" : "PDF") as "PDF" | "DOCX";
+
+  const free = isFreePaperId(paperId);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [qr, setQr] = useState<string>("");
+  const [utr, setUtr] = useState("");
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const vpa = process.env.NEXT_PUBLIC_UPI_VPA ?? "yourname@okaxis";
+  const payee = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ?? "Question Paper Builder";
+
+  const doDownload = useCallback(
+    async (watermark: boolean) => {
+      setBusy(true);
+      setMsg("Preparing your download…");
+      try {
+        await downloadPaper(paperId, format, watermark);
+        setMsg("Done! Check your downloads / new tab.");
+      } catch (e) {
+        setMsg((e as Error).message);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [paperId, format],
+  );
+
+  // Free demo: skip payment entirely.
+  useEffect(() => {
+    if (free) return;
+    (async () => {
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paperId, format }),
+        });
+        if (res.status === 401) {
+          setMsg("Please sign in to purchase this download.");
+          return;
+        }
+        const data = (await res.json()) as { order?: Order };
+        if (data.order) {
+          setOrder(data.order);
+          const link = upiLink({
+            vpa,
+            payeeName: payee,
+            amountPaise: data.order.amount,
+            note: `Paper ${paperId}`,
+            orderId: data.order.id,
+          });
+          setQr(await QRCode.toDataURL(link, { width: 240 }));
+        }
+      } catch {
+        setMsg("Could not start checkout.");
+      }
+    })();
+  }, [free, paperId, format, vpa, payee]);
+
+  // Poll for admin/gateway confirmation.
+  useEffect(() => {
+    if (free || !order || order.status === "paid") return;
+    const t = setInterval(async () => {
+      const res = await fetch(`/api/orders/${order.id}`);
+      if (res.ok) {
+        const data = (await res.json()) as { order: Order };
+        setOrder(data.order);
+      }
+    }, 4000);
+    return () => clearInterval(t);
+  }, [free, order]);
+
+  if (free) {
+    return (
+      <Shell>
+        <h1 className="text-xl font-semibold">Free demo download</h1>
+        <p className="mt-2 text-stone-600">
+          This is a sample/demo paper — download it free (watermarked) to try the export.
+        </p>
+        <button
+          onClick={() => doDownload(true)}
+          disabled={busy}
+          className="mt-4 rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
+        >
+          Download {format}
+        </button>
+        {msg && <p className="mt-3 text-sm text-stone-500">{msg}</p>}
+      </Shell>
+    );
+  }
+
+  const paid = order?.status === "paid";
+
+  return (
+    <Shell>
+      <h1 className="text-xl font-semibold">Download {format}</h1>
+      {msg && <p className="mt-2 text-sm text-amber-700">{msg}</p>}
+
+      {!order ? (
+        <p className="mt-3 text-stone-500">Starting checkout…</p>
+      ) : paid ? (
+        <div className="mt-4">
+          <p className="font-medium text-green-700">✓ Payment approved — no watermark.</p>
+          <button
+            onClick={() => doDownload(false)}
+            disabled={busy}
+            className="mt-3 rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
+          >
+            Download {format}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4 space-y-4">
+          <p className="text-stone-700">
+            Pay <strong>₹{rupees(order.amount)}</strong> by scanning this UPI QR with any UPI
+            app (GPay, PhonePe, Paytm).
+          </p>
+          {qr && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={qr} alt="UPI QR" className="rounded border bg-white p-2" width={240} height={240} />
+          )}
+          <p className="text-xs text-stone-500">
+            Paying <strong>{vpa}</strong>. After paying, enter the UPI reference / UTR below and
+            submit — your download unlocks once the payment is confirmed.
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={utr}
+              onChange={(e) => setUtr(e.target.value)}
+              placeholder="UPI transaction ID / UTR"
+              className="flex-1 rounded border px-2 py-1 text-sm"
+            />
+            <button
+              onClick={async () => {
+                await fetch(`/api/orders/${order.id}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ utr }),
+                });
+                setMsg("Submitted. Waiting for confirmation…");
+              }}
+              className="rounded bg-stone-900 px-3 py-1 text-sm text-white"
+            >
+              Submit
+            </button>
+          </div>
+          <p className="text-xs text-stone-400">Waiting for confirmation… (this page auto-refreshes)</p>
+        </div>
+      )}
+    </Shell>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="mx-auto mt-16 max-w-md rounded-xl border bg-white p-6 shadow-sm">
+      {children}
+      <div className="mt-6 text-sm">
+        <a href="javascript:history.back()" className="text-stone-500 hover:underline">
+          ← Back to editor
+        </a>
+      </div>
+    </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-stone-500">Loading…</div>}>
+      <Checkout />
+    </Suspense>
+  );
+}

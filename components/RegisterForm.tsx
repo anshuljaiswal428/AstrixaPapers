@@ -2,17 +2,41 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { migrateGuestPaper } from "@/lib/guestPaper";
+import { validateName, validatePhone, validatePassword } from "@/lib/authValidation";
+import {
+  AuthShell,
+  AuthField,
+  AuthPasswordField,
+  AuthButton,
+  AuthError,
+  UserIcon,
+  PhoneIcon,
+} from "@/components/AuthShell";
 
 export function RegisterForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    phone?: string;
+    password?: string;
+  }>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const fe = {
+      name: validateName(name) ?? undefined,
+      phone: validatePhone(phone) ?? undefined,
+      password: validatePassword(password) ?? undefined,
+    };
+    setFieldErrors(fe);
+    if (fe.name || fe.phone || fe.password) return;
+
     setBusy(true);
     setError("");
     const res = await fetch("/api/register", {
@@ -33,50 +57,58 @@ export function RegisterForm() {
   }
 
   return (
-    <main className="flex justify-center px-4 pt-14 sm:pt-20">
-      <div className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
-      <h1 className="text-xl font-semibold">Create account</h1>
-      <form onSubmit={submit} className="mt-4 space-y-3">
-        <input
-          placeholder="Full name"
+    <AuthShell
+      title="Create your account"
+      subtitle="Start building exam papers in minutes"
+      footer={
+        <>
+          Have an account?{" "}
+          <Link href="/login" className="font-semibold text-indigo-700 hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <AuthField
+          icon={<UserIcon />}
+          label="Full name"
+          placeholder="Your name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded border px-3 py-2 text-sm"
-          required
+          error={fieldErrors.name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setFieldErrors((p) => ({ ...p, name: undefined }));
+          }}
         />
-        <input
+        <AuthField
+          icon={<PhoneIcon />}
+          label="Phone number"
           type="tel"
           inputMode="numeric"
-          placeholder="Phone number"
+          placeholder="9876543210"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="w-full rounded border px-3 py-2 text-sm"
-          required
+          error={fieldErrors.phone}
+          onChange={(e) => {
+            setPhone(e.target.value);
+            setFieldErrors((p) => ({ ...p, phone: undefined }));
+          }}
         />
-        <input
-          type="password"
-          placeholder="Password (min 6 chars)"
+        <AuthPasswordField
+          label="Password"
+          placeholder="Min 6 characters"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded border px-3 py-2 text-sm"
-          required
+          error={fieldErrors.password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setFieldErrors((p) => ({ ...p, password: undefined }));
+          }}
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded bg-stone-900 py-2 text-white disabled:opacity-50"
-        >
-          {busy ? "Creating…" : "Create account"}
-        </button>
+        <AuthError message={error} />
+        <AuthButton busy={busy} busyLabel="Creating…">
+          Create account
+        </AuthButton>
       </form>
-      <p className="mt-4 text-sm text-stone-500">
-        Have an account?{" "}
-        <a href="/login" className="text-stone-900 hover:underline">
-          Sign in
-        </a>
-      </p>
-      </div>
-    </main>
+    </AuthShell>
   );
 }

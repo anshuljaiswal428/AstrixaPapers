@@ -1,10 +1,15 @@
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { validatePhone, validatePassword } from "@/lib/authValidation";
 
 /**
- * Standalone admin gate — a single password (ADMIN_PASSWORD) protects the admin
- * dashboard, independent of user accounts. The session cookie holds an
- * HMAC(AUTH_SECRET) token that can't be forged without the server secret.
+ * Admin gate backed by the database: the admin dashboard is unlocked by signing
+ * in with a real user account whose `role` is "admin" (phone + password). On
+ * success we set a session cookie holding an HMAC(AUTH_SECRET) token that can't
+ * be forged without the server secret. Admins are designated in the DB (the
+ * first registered user is an admin; others are promoted directly in the DB).
  */
 export const ADMIN_COOKIE = "admin_session";
 
@@ -20,10 +25,15 @@ function safeEqual(a: string, b: string): boolean {
   return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
 }
 
-export function checkAdminPassword(password: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD ?? "";
-  if (!expected) return false;
-  return safeEqual(password, expected);
+/** True only if the phone/password match an existing user with role "admin". */
+export async function verifyAdminCredentials(
+  phone: string,
+  password: string,
+): Promise<boolean> {
+  if (validatePhone(phone) || validatePassword(password)) return false;
+  const user = await prisma.user.findUnique({ where: { phone: phone.trim() } });
+  if (!user || user.role !== "admin" || !user.passwordHash) return false;
+  return bcrypt.compare(password, user.passwordHash);
 }
 
 /** True if the current request carries a valid admin session cookie. */

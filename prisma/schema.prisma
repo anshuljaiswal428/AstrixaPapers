@@ -27,6 +27,7 @@ model User {
   orders   Order[]
   accounts Account[]
   sessions Session[]
+  templateSuggestions TemplateSuggestion[]
 }
 
 model Paper {
@@ -70,6 +71,28 @@ model Order {
   paidAt    DateTime?
 
   messages Message[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+// A user-uploaded sample layout (PDF or Word) suggesting a new paper template.
+// The file is stored inline as a base64 data URL (same approach as payment
+// screenshots) since there's no object storage wired up. Capped ~5 MB.
+model TemplateSuggestion {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName  String
+  // "application/pdf" | "application/msword" | DOCX mime
+  mimeType  String
+  // base64 data URL of the uploaded file.
+  fileData  String
+  // Optional note from the user describing what they want.
+  note      String?
+  // "pending" | "reviewed"
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([status])

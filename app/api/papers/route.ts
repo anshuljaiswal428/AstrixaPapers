@@ -22,8 +22,8 @@ export async function GET() {
 export async function POST(req: Request) {
   const uid = await userId();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = (await req.json().catch(() => ({}))) as { doc?: PaperDoc };
-  const doc = body.doc ?? newPaper();
+  const body = (await req.json().catch(() => ({}))) as { doc?: PaperDoc; templateId?: string };
+  const doc = body.doc ?? newPaper(body.templateId);
   const paper = await prisma.paper.create({
     data: {
       userId: uid,

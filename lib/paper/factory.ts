@@ -87,10 +87,11 @@ export function newSection(title: string): Section {
   return { id: uid("sec"), title, questions: [] };
 }
 
-/** A blank paper with just a header and Section A. */
-export function newPaper(): PaperDoc {
+/** A blank paper with just a header and Section A, using the given layout template. */
+export function newPaper(templateId = "template-1"): PaperDoc {
   return {
     title: "Untitled Question Paper",
+    templateId,
     header: {
       schoolName: "SCHOOL NAME",
       examTitle: "FIRST TERM EXAM 2026-27",

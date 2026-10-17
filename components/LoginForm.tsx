@@ -3,17 +3,35 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { migrateGuestPaper } from "@/lib/guestPaper";
+import { validatePhone, validatePassword } from "@/lib/authValidation";
+import {
+  AuthShell,
+  AuthField,
+  AuthPasswordField,
+  AuthButton,
+  AuthError,
+  PhoneIcon,
+} from "@/components/AuthShell";
 
 export function LoginForm() {
   const sp = useSearchParams();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string }>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const fe = {
+      phone: validatePhone(phone) ?? undefined,
+      password: validatePassword(password) ?? undefined,
+    };
+    setFieldErrors(fe);
+    if (fe.phone || fe.password) return;
+
     setBusy(true);
     setError("");
     const res = await signIn("credentials", { phone, password, redirect: false });
@@ -30,43 +48,47 @@ export function LoginForm() {
   }
 
   return (
-    <main className="flex justify-center px-4 pt-14 sm:pt-20">
-      <div className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
-      <h1 className="text-xl font-semibold">Sign in</h1>
-      <form onSubmit={submit} className="mt-4 space-y-3">
-        <input
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to Paper Rankers to continue"
+      footer={
+        <>
+          No account?{" "}
+          <Link href="/register" className="font-semibold text-indigo-700 hover:underline">
+            Create one
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <AuthField
+          icon={<PhoneIcon />}
+          label="Phone number"
           type="tel"
           inputMode="numeric"
-          placeholder="Phone number"
+          placeholder="9876543210"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="w-full rounded border px-3 py-2 text-sm"
-          required
+          error={fieldErrors.phone}
+          onChange={(e) => {
+            setPhone(e.target.value);
+            setFieldErrors((p) => ({ ...p, phone: undefined }));
+          }}
         />
-        <input
-          type="password"
-          placeholder="Password"
+        <AuthPasswordField
+          label="Password"
+          placeholder="Your password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded border px-3 py-2 text-sm"
-          required
+          error={fieldErrors.password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setFieldErrors((p) => ({ ...p, password: undefined }));
+          }}
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded bg-stone-900 py-2 text-white disabled:opacity-50"
-        >
-          {busy ? "Signing in…" : "Sign in"}
-        </button>
+        <AuthError message={error} />
+        <AuthButton busy={busy} busyLabel="Signing in…">
+          Sign in
+        </AuthButton>
       </form>
-      <p className="mt-4 text-sm text-stone-500">
-        No account?{" "}
-        <a href="/register" className="text-stone-900 hover:underline">
-          Create one
-        </a>
-      </p>
-      </div>
-    </main>
+    </AuthShell>
   );
 }

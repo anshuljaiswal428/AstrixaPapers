@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PaperDoc, Question, QuestionType, Section } from "@/lib/paper/types";
 import { paperTotalMarks } from "@/lib/paper/types";
 import { newQuestion, newSection, uid, QUESTION_TYPE_LABELS } from "@/lib/paper/factory";
+import { TEMPLATES, DEFAULT_TEMPLATE_ID } from "@/lib/templates";
 import { WATERMARK } from "@/lib/payments";
 import { PaperPreview } from "@/components/preview/PaperPreview";
 import { QuestionBodyEditor } from "./QuestionEditors";
@@ -122,6 +123,21 @@ export function Editor({
           onChange={(e) => update((d) => ({ ...d, title: e.target.value }))}
           className="order-last w-full min-w-0 rounded border px-2 py-1 text-sm font-medium sm:order-none sm:flex-1"
         />
+        <label className="flex shrink-0 items-center gap-1 text-xs text-stone-500">
+          Template
+          <select
+            value={doc.templateId ?? DEFAULT_TEMPLATE_ID}
+            onChange={(e) => update((d) => ({ ...d, templateId: e.target.value }))}
+            className="rounded border px-1.5 py-1 text-xs text-stone-900"
+          >
+            {TEMPLATES.map((t) => (
+              <option key={t.id} value={t.id} disabled={!t.available}>
+                {t.name}
+                {t.available ? "" : " (Coming soon)"}
+              </option>
+            ))}
+          </select>
+        </label>
         <span className="text-xs text-stone-500">Total: {total} marks</span>
         <span className="text-xs text-stone-400">
           {saving === "saving"

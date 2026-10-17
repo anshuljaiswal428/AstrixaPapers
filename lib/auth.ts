@@ -4,22 +4,23 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { PHONE_RE, PASSWORD_MIN } from "@/lib/authValidation";
 
 /** Phone: 7–15 digits, optional leading +. */
 export const phoneSchema = z
   .string()
   .trim()
-  .regex(/^\+?\d{7,15}$/, "Enter a valid phone number");
+  .regex(PHONE_RE, "Enter a valid phone number");
 
 export const credentialsSchema = z.object({
   phone: phoneSchema,
-  password: z.string().min(6),
+  password: z.string().min(PASSWORD_MIN),
 });
 
 export const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   phone: phoneSchema,
-  password: z.string().min(6),
+  password: z.string().min(PASSWORD_MIN),
 });
 
 /**

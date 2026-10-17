@@ -4,7 +4,6 @@ import {
   Document,
   Footer,
   Header,
-  HeadingLevel,
   ImageRun,
   Packer,
   Paragraph,
@@ -172,6 +171,45 @@ async function questionParas(q: Question, index: number): Promise<(Paragraph | T
   return out;
 }
 
+/** Borderless cell helper for the match / header layout tables. */
+const NO_TABLE_BORDERS = {
+  top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  insideHorizontal: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+};
+
+/** The small W/O/T marks grid (bordered), matching `.qp-marks-table` in the PDF. */
+function marksGrid(mt: { written?: number; oral?: number; total?: number }): Table {
+  const cell = (text: string) =>
+    new TableCell({
+      children: [
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 0 },
+          children: [new TextRun({ text, size: 20, bold: true })],
+        }),
+      ],
+      margins: { top: 10, bottom: 10, left: 60, right: 60 },
+      width: { size: 33, type: WidthType.PERCENTAGE },
+    });
+  return new Table({
+    width: { size: 55, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({ children: [cell("W"), cell("O"), cell("T")] }),
+      new TableRow({
+        children: [
+          cell(mt.written != null ? String(mt.written) : ""),
+          cell(mt.oral != null ? String(mt.oral) : ""),
+          cell(mt.total != null ? String(mt.total) : ""),
+        ],
+      }),
+    ],
+  });
+}
+
 /** A faint, repeated watermark line for the page header/footer (shows on every page). */
 function watermarkParagraph(text: string): Paragraph {
   const tile = `${text}      `.repeat(3);
@@ -187,30 +225,66 @@ export async function paperToDocx(
   opts: { watermark?: string } = {},
 ): Promise<Buffer> {
   const h = doc.header;
+  const total = paperTotalMarks(doc);
+
+  // Right-side block: W/O/T box, then Marks + Time stacked beneath it (like the PDF).
+  const rightCellChildren: (Paragraph | Table)[] = [];
+  if (h.marksTable) rightCellChildren.push(marksGrid(h.marksTable));
+  rightCellChildren.push(
+    new Paragraph({
+      spacing: { before: h.marksTable ? 40 : 0, after: 0 },
+      children: [new TextRun({ text: `Marks-${h.marksTable?.written ?? total}`, bold: true })],
+    }),
+    new Paragraph({
+      spacing: { after: 0 },
+      children: [new TextRun({ text: `Time: ${h.time}`, bold: true })],
+    }),
+  );
+
+  const centered = (runs: TextRun[], opts: object = {}) =>
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 }, children: runs, ...opts });
+
   const children: (Paragraph | Table)[] = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      heading: HeadingLevel.HEADING_1,
-      children: [new TextRun({ text: h.schoolName.toUpperCase(), bold: true })],
+    // School name spans the full width, centered on its own top line.
+    centered([new TextRun({ text: h.schoolName.toUpperCase(), bold: true, size: 28 })]),
+    // Two columns: centered title/class/subject on the left, W/O/T + marks + time on the right.
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: NO_TABLE_BORDERS,
+      columnWidths: [6600, 2400],
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 73, type: WidthType.PERCENTAGE },
+              children: [
+                centered([new TextRun({ text: h.examTitle, bold: true })]),
+                centered([new TextRun({ text: `CLASS – ${h.className}`, bold: true })]),
+                centered([new TextRun({ text: `SUBJECT – ${h.subject}`, bold: true })]),
+              ],
+            }),
+            new TableCell({
+              width: { size: 27, type: WidthType.PERCENTAGE },
+              children: rightCellChildren,
+            }),
+          ],
+        }),
+      ],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: h.examTitle, bold: true })] }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [new TextRun(`CLASS – ${h.className}     SUBJECT – ${h.subject}`)],
-    }),
-    new Paragraph({
-      spacing: { after: 120 },
-      tabStops: [{ type: "right", position: 9000 }],
-      children: [new TextRun(`Time: ${h.time}\tMax Marks: ${h.marksTable?.total ?? paperTotalMarks(doc)}`)],
-    }),
-    // Name/Roll stacked, one per line.
+    // Name/Roll stacked, one per line, left-aligned.
     ...h.fields.map(
       (f) =>
         new Paragraph({
-          spacing: { after: 80 },
-          children: [new TextRun(`${f.label}: ______________________`)],
+          spacing: { before: 60, after: 60 },
+          children: [new TextRun(`${f.label} - ______________________`)],
         }),
     ),
+    // Horizontal rule beneath the whole header block (matches `.qp-header` border-bottom).
+    new Paragraph({
+      spacing: { after: 160 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000", space: 1 } },
+      children: [new TextRun("")],
+    }),
   ];
 
   for (const section of doc.sections) {
